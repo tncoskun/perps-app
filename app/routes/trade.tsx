@@ -1,10 +1,11 @@
-import { Link, Outlet } from 'react-router';
-import type { Route } from './+types/home';
-import styles from './trade.module.css';
+import { Link, Outlet } from "react-router";
+import type { Route } from "./+types/home";
+import styles from "./trade.module.css";
+import Chart from "~/components/chart/Chart";
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: 'TRADE' },
-    { name: 'description', content: 'Welcome to React Router!' },
+    { title: "TRADE" },
+    { name: "description", content: "Welcome to React Router!" },
   ];
 }
 
@@ -34,7 +35,9 @@ export default function Trade({ loaderData }: Route.ComponentProps) {
         <div className={styles.containerTopLeft}>
           <div className={styles.watchlist}>watchlist</div>
           <div className={styles.symbolInfo}>symbol info</div>
-          <div className={styles.chart}>chart</div>
+          <div className={styles.chart}>
+            <Chart />
+          </div>
         </div>
 
         <div className={styles.orderBook}>order book goes here</div>
