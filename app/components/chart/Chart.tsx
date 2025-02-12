@@ -1,14 +1,13 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
+import { dataFeed } from "./data/dataFeed";
 import {
   widget,
-  type ChartingLibraryWidgetOptions,
   type ResolutionString,
 } from "../../../public/tradingview/charting_library";
 
 export interface ChartContainerProps {
-  symbol: string;
+  symbolName:string,
   interval: ResolutionString;
-  datafeedUrl: string;
   libraryPath: string;
   chartsStorageUrl: string;
   chartsStorageApiVersion: string;
@@ -20,13 +19,12 @@ export interface ChartContainerProps {
   container: string;
 }
 
-const Chart: React.FC = () => {
+const TradingViewChart = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
   const defaultProps: Omit<ChartContainerProps, "container"> = {
-    symbol: "AAPL",
+    symbolName:"SOLANA",
     interval: "D" as ResolutionString,
-    datafeedUrl: "https://demo_feed.tradingview.com",
     libraryPath: "/tradingview/charting_library/",
     chartsStorageUrl: "https://saveload.tradingview.com",
     chartsStorageApiVersion: "1.1",
@@ -38,49 +36,33 @@ const Chart: React.FC = () => {
   };
 
   useEffect(() => {
-    if (chartContainerRef.current) {
-      const widgetOptions: ChartingLibraryWidgetOptions = {
-        symbol: defaultProps.symbol,
-        datafeed: new (window as any).Datafeeds.UDFCompatibleDatafeed(
-          defaultProps.datafeedUrl
-        ),
-        interval: defaultProps.interval,
-        container: chartContainerRef.current,
-        library_path: defaultProps.libraryPath,
-        locale: "en",
-        disabled_features: ["use_localstorage_for_settings"],
-        enabled_features: ["study_templates"],
-        charts_storage_url: defaultProps.chartsStorageUrl,
-        charts_storage_api_version: "1.1",
-        client_id: defaultProps.clientId,
-        user_id: defaultProps.userId,
-        fullscreen: defaultProps.fullscreen,
-        autosize: defaultProps.autosize,
-        studies_overrides: defaultProps.studiesOverrides,
-        theme: "dark",
-        overrides: {
-          "paneProperties.background": "#0e0e14",
-          "paneProperties.backgroundType": "solid",
-        },
-        custom_css_url: "./../tradingview-chart-custom.css",
-        loading_screen: { backgroundColor: "#0e0e14" },
-      };
+    if (!chartContainerRef.current) return;
 
-      const tvWidget = new widget(widgetOptions);
+    const tvWidget = new widget({
+      container: chartContainerRef.current,
+      library_path: defaultProps.libraryPath,
+      timezone: "Etc/UTC",
+      symbol:defaultProps.symbolName,
+      fullscreen: false,
+      autosize: true,
+      datafeed: dataFeed as any,
+      interval: defaultProps.interval,
+      locale: "en",
+      
+      theme: "dark",
+      overrides: {
+        "paneProperties.background": "#0e0e14",
+        "paneProperties.backgroundType": "solid",
+      },
+      custom_css_url: "./../tradingview-chart-custom.css",
+      loading_screen: { backgroundColor: "#0e0e14" },
+    });
 
-      tvWidget.onChartReady(() => {
-        // tvWidget.headerReady().then(() => {
-        //**
-        // we can add button vs in header
-        //  */
-      });
-
-      return () => {
-        if (tvWidget) {
-          tvWidget.remove();
-        }
-      };
-    }
+    return () => {
+      if (tvWidget) {
+        tvWidget.remove();
+      }
+    };
   }, []);
 
   return (
@@ -91,4 +73,4 @@ const Chart: React.FC = () => {
   );
 };
 
-export default Chart;
+export default TradingViewChart;
