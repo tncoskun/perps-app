@@ -10,6 +10,5 @@
 
 
 # Tradingview
-/public/charting_library
-/public/datafeeds
-/app/charting_library
+/public/tradingview/charting_library
+/public/tradingview/datafeeds
