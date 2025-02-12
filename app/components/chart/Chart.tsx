@@ -3,7 +3,7 @@ import {
   widget,
   type ChartingLibraryWidgetOptions,
   type ResolutionString,
-} from "~/charting_library";
+} from "../../../public/tradingview/charting_library";
 
 export interface ChartContainerProps {
   symbol: string;
@@ -27,7 +27,7 @@ const Chart: React.FC = () => {
     symbol: "AAPL",
     interval: "D" as ResolutionString,
     datafeedUrl: "https://demo_feed.tradingview.com",
-    libraryPath: "/charting_library/",
+    libraryPath: "/tradingview/charting_library/",
     chartsStorageUrl: "https://saveload.tradingview.com",
     chartsStorageApiVersion: "1.1",
     clientId: "tradingview.com",
@@ -62,8 +62,7 @@ const Chart: React.FC = () => {
           "paneProperties.background": "#0e0e14",
           "paneProperties.backgroundType": "solid",
         },
-        toolbar_bg: "#0e0e14",
-        custom_css_url: "./chart.css",
+        custom_css_url: "./../tradingview-chart-custom.css",
         loading_screen: { backgroundColor: "#0e0e14" },
       };
 
@@ -76,7 +75,6 @@ const Chart: React.FC = () => {
         //  */
       });
 
-      // Cleanup function to remove the widget safely
       return () => {
         if (tvWidget) {
           tvWidget.remove();
