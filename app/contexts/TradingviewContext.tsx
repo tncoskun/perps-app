@@ -1,6 +1,7 @@
 import { widget, type IChartingLibraryWidget, type ResolutionString } from "public/tradingview/charting_library";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { createDataFeed } from "~/routes/chart/data/customDataFeed";
+import { useWebSocketContext } from "./WebSocketContext";
 
 interface TradingViewContextType {
   chart: IChartingLibraryWidget | null;
@@ -25,7 +26,19 @@ export interface ChartContainerProps {
 export const TradingViewProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [chart, setChart] = useState<IChartingLibraryWidget | null>(null);
 
+  const { readyState, addSubscription, socketRef } = useWebSocketContext();
 
+  useEffect(() => {
+    if (readyState === 1) {
+      const payload = {
+        coin: "BTC",
+        interval: "1m",
+      };
+ 
+      addSubscription("candle", payload);
+    }
+  }, [readyState]);
+  
   const defaultProps: Omit<ChartContainerProps, "container"> = {
     symbolName: "BTC",
     interval: "D" as ResolutionString,
@@ -47,7 +60,7 @@ export const TradingViewProvider: React.FC<{ children: React.ReactNode }> = ({ c
       symbol: defaultProps.symbolName,
       fullscreen: false,
       autosize: true,
-      datafeed: createDataFeed() as any,
+      datafeed: createDataFeed(socketRef.current) as any,
       interval: defaultProps.interval,
       locale: "en",
       theme: "dark",
@@ -75,7 +88,7 @@ export const TradingViewProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setChart(tvWidget);
 
     return () => tvWidget.remove();
-  }, []);
+  }, [socketRef.current]);
 
   return <TradingViewContext.Provider value={{ chart }}>{children}</TradingViewContext.Provider>;
 };

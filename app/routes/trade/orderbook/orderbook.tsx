@@ -94,10 +94,10 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
       }
   }, [lastMessage])
 
-  useEffect(() => {
-    console.log('>>> buyOrders', buyOrders)
-    console.log('>>> sellOrders', sellOrders)
-}, [buyOrders, sellOrders])
+//   useEffect(() => {
+//     console.log('>>> buyOrders', buyOrders)
+//     console.log('>>> sellOrders', sellOrders)
+// }, [buyOrders, sellOrders])
 
 
   return (

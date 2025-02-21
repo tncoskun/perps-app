@@ -3,12 +3,13 @@ import type {
   IDatafeedChartApi,
   LibrarySymbolInfo,
   ResolutionString,
+  SubscribeBarsCallback,
 } from "public/tradingview/charting_library/charting_library";
 import { getHistoricalData } from "./candleDataCache";
 import { mapResolutionToInterval } from "../utils";
 
 
-export const createDataFeed = (): IDatafeedChartApi =>
+export const createDataFeed = (socketRef: WebSocket | null): IDatafeedChartApi =>
   ({
     searchSymbols: (userInput: string, exchange, symbolType, onResult) => {
       onResult([
@@ -94,12 +95,8 @@ export const createDataFeed = (): IDatafeedChartApi =>
       symbolInfo,
       resolution,
       onTick,
-      listenerGuid,
-      onResetCacheNeededCallback
     ) => {
-      /**
-       * for live candles
-       */
+      subscribeOnStream(symbolInfo, resolution, onTick, socketRef);
     },
 
     unsubscribeBars: (listenerGuid) => {
@@ -107,3 +104,30 @@ export const createDataFeed = (): IDatafeedChartApi =>
       delete (window as any)[listenerGuid];
     },
   } as IDatafeedChartApi);
+
+const subscribeOnStream = (
+  symbolInfo: LibrarySymbolInfo,
+  resolution: ResolutionString,
+  onTick: SubscribeBarsCallback,
+  socketRef: WebSocket | null
+) => {
+
+  if (socketRef) {
+    socketRef.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.channel === "candle") {
+
+        const bar = {
+          time: msg.data.T,
+          open: Number(msg.data.o),
+          high: Number(msg.data.h),
+          low: Number(msg.data.l),
+          close: Number(msg.data.c),
+          volume: Number(msg.data.v),
+        }
+        
+        onTick(bar);
+      }
+    };
+  }
+};

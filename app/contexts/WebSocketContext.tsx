@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { useIsClient } from "~/hooks/useIsClient"; // Import your existing useIsClient hook
 
 type WebSocketContextType = {
@@ -6,6 +13,7 @@ type WebSocketContextType = {
   lastMessage: string | null;
   readyState: number;
   addSubscription: (type: string, payload: any) => void;
+  socketRef: RefObject<WebSocket|null>
 };
 
 enum WebSocketReadyState {
@@ -15,12 +23,20 @@ enum WebSocketReadyState {
   CLOSED = 3,
 }
 
-const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
+const WebSocketContext = createContext<WebSocketContextType | undefined>(
+  undefined
+);
 
-export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNode }> = ({ url, children }) => {
+export const WebSocketProvider: React.FC<{
+  url: string;
+  children: React.ReactNode;
+}> = ({ url, children }) => {
   const isClient = useIsClient(); // ✅ Prevents WebSocket from running on SSR
   const [message, setMessage] = useState<string | null>(null);
-  const [readyState, setReadyState] = useState<number>(WebSocketReadyState.CLOSED);
+  const [readyState, setReadyState] = useState<number>(
+    WebSocketReadyState.CLOSED
+  );
+
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const reconnectDelay = 3000; // Auto-reconnect delay
@@ -66,30 +82,30 @@ export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNod
     };
   }, [url, isClient]); // ✅ Only runs when client-side is ready
 
-
   const sendMessage = (msg: string) => {
     if (socketRef.current?.readyState === WebSocketReadyState.OPEN) {
       socketRef.current.send(msg);
     }
   };
-  
 
   const addSubscription = (type: string, payload: any) => {
-        sendMessage(JSON.stringify(
-          {method: "subscribe", 
-            subscription: 
-            {
-              type: type,
-              ...payload
-            }}
-        ))
+    sendMessage(
+      JSON.stringify({
+        method: "subscribe",
+        subscription: {
+          type: type,
+          ...payload,
+        },
+      })
+    );
   };
 
   return (
-    <WebSocketContext.Provider value={{ sendMessage, lastMessage: message, readyState, addSubscription}}>
+    <WebSocketContext.Provider
+      value={{ sendMessage, lastMessage: message, readyState, addSubscription, socketRef }}
+    >
       {children}
     </WebSocketContext.Provider>
-    
   );
 };
 
@@ -97,7 +113,9 @@ export const WebSocketProvider: React.FC<{ url: string; children: React.ReactNod
 export const useWebSocketContext = () => {
   const context = useContext(WebSocketContext);
   if (!context) {
-    throw new Error("useWebSocketContext must be used within a WebSocketProvider");
+    throw new Error(
+      "useWebSocketContext must be used within a WebSocketProvider"
+    );
   }
   return context;
 };
