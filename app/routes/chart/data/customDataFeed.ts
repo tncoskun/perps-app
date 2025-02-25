@@ -6,7 +6,6 @@ import type {
   SubscribeBarsCallback,
 } from "public/tradingview/charting_library/charting_library";
 import { getHistoricalData } from "./candleDataCache";
-import { mapResolutionToInterval } from "../utils";
 
 
 export const createDataFeed = (socketRef: WebSocket | null): IDatafeedChartApi =>
