@@ -10,7 +10,7 @@ const PendingOrders = () => {
   };
 
   useEffect(() => {
-    addOrder(99000, 5.3, "Limit"); /* .then(
+    addOrder(99000, 5.3, "Buy"); /* .then(
       (res: IOrderLineAdapter | undefined) => {}
     ); */
   }, [chart]);
