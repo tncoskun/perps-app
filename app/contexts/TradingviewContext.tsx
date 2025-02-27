@@ -46,22 +46,6 @@ export const TradingViewProvider: React.FC<{ children: React.ReactNode }> = ({ c
     studiesOverrides: {},
   };
 
-      // const changeSubscription = (payload: any) => {
-      //   subscribe('candle', 
-      //     {payload: payload,
-      //     handler: candleDataHandler,
-      //     single: true
-      //   })
-      // }
-  
-      // useEffect(() => {
-      //   changeSubscription({
-      //     coin: defaultProps.symbolName,
-      //     // interval: defaultProps.interval,
-      //     interval: "1d",
-      //   });
-      // }, [defaultProps.symbolName])
-
   useEffect(() => {
     const tvWidget = new widget({
       container: "tv_chart",
@@ -92,7 +76,9 @@ export const TradingViewProvider: React.FC<{ children: React.ReactNode }> = ({ c
     ],
     });    
 
-    setChart(tvWidget);
+    tvWidget.onChartReady(() => {
+      setChart(tvWidget);
+    });
 
     return () => tvWidget.remove();
   }, [symbol]);
