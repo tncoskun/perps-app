@@ -3,7 +3,7 @@ import type {
   OrderTemplate,
 } from "public/tradingview/charting_library/charting_library";
 
-interface OrderLine {
+export interface OrderLine {
   setPrice: (price: number) => void;
   setText: (text: string) => void;
   setTooltip: (tooltip: string) => any;
