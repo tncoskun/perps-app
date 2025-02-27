@@ -103,6 +103,10 @@ export const createDataFeed = (): IDatafeedChartApi =>
       clearInterval((window as any)[listenerGuid]);
       delete (window as any)[listenerGuid];
     },
+
+    onRealtimeCallback: (resolution: string) => {
+      console.log(resolution)
+    }
   } as IDatafeedChartApi);
 
 const subscribeOnStream = (
