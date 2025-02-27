@@ -47,6 +47,7 @@ export const TradingViewProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   useEffect(() => {
+    
     const tvWidget = new widget({
       container: "tv_chart",
       library_path: defaultProps.libraryPath,

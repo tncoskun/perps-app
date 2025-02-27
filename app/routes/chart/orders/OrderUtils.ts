@@ -17,7 +17,7 @@ export const addOrderLine = (
   chart: any,
   price: number,
   quantity: number,
-  text = "Bekleyen Emir"
+  text = ""
 ) => {
   if (!chart) return;
 
@@ -25,7 +25,6 @@ export const addOrderLine = (
   orderLine
     .setText(`${text}`)
     .setPrice(price)
-    .setQuantity("1")
     .setLineStyle(2)
     .setLineColor("#4285F4")
     .setBodyBackgroundColor("#4285F4")
@@ -38,43 +37,43 @@ export const addOrderLine = (
     //   const newPrice = this.getPrice();
     //   this.setText(`${text}: ${newPrice.toFixed(2)}`);
     // })
-    .setLineLength(30, "percentage");
+    .setLineLength(10, "percentage");
 
-  const tp = 99000;
-  const sl = 99000;
-  // TP (Take Profit)
-  let tpLine: IOrderLineAdapter | null = null;
-  if (tp) {
-    tpLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
-    tpLine
-      .setPrice(tp)
-      .setText("TP")
-      .setLineStyle(1)
-      .setBodyTextColor("#008000")
-      .setBodyBackgroundColor("#FFFFFF")
-      .setBodyBorderColor("#00A859")
-      .setTooltip("Take Profit Order")
-      .setLineLength(20, "percentage")
-      .setExtendLeft(false);
-  }
+  // const tp = 99000;
+  // const sl = 99000;
+  // // TP (Take Profit)
+  // let tpLine: IOrderLineAdapter | null = null;
+  // if (tp) {
+  //   tpLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
+  //   tpLine
+  //     .setPrice(tp)
+  //     .setText("TP")
+  //     .setLineStyle(1)
+  //     .setBodyTextColor("#008000")
+  //     .setBodyBackgroundColor("#FFFFFF")
+  //     .setBodyBorderColor("#00A859")
+  //     .setTooltip("Take Profit Order")
+  //     .setLineLength(20, "percentage")
+  //     .setExtendLeft(false);
+  // }
 
   // SL (Stop Loss)
-  let slLine: IOrderLineAdapter | null = null;
-  if (sl) {
-    slLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
-    slLine
-      .setPrice(sl)
-      .setText("SL")
-      .setLineStyle(1)
-      .setBodyTextColor("#FF0000")
-      .setBodyBackgroundColor("#FFFFFF")
-      .setBodyBorderColor("#FF4500")
-      .setTooltip("Stop Loss Order")
-      .setLineLength(10, "percentage")
-      .setExtendLeft(false);
-  }
+  // let slLine: IOrderLineAdapter | null = null;
+  // if (sl) {
+  //   slLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
+  //   slLine
+  //     .setPrice(sl)
+  //     .setText("SL")
+  //     .setLineStyle(1)
+  //     .setBodyTextColor("#FF0000")
+  //     .setBodyBackgroundColor("#FFFFFF")
+  //     .setBodyBorderColor("#FF4500")
+  //     .setTooltip("Stop Loss Order")
+  //     .setLineLength(10, "percentage")
+  //     .setExtendLeft(false);
+  // }
 
-  const dragLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
+  /*   const dragLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
   dragLine
     .setPrice(price)
     .setText("")
@@ -85,26 +84,26 @@ export const addOrderLine = (
     .setLineLength(80, "percentage")
     .setExtendLeft(false)
     .setQuantityBackgroundColor("#FFFFFF");
-
+ */
   if (orderLine) {
-    const tpOffset = tp ? tp - price : 0;
-    const slOffset = sl ? sl - price : 0;
+    // const tpOffset = tp ? tp - price : 0;
+    // const slOffset = sl ? sl - price : 0;
 
     orderLine
       .onMove(function (this: OrderLine) {
         const newPrice = this.getPrice();
-        if (tpLine) tpLine.setPrice(newPrice + tpOffset);
+        /*    if (tpLine) tpLine.setPrice(newPrice + tpOffset);
         if (slLine) slLine.setPrice(newPrice + slOffset);
-        if (dragLine) dragLine.setPrice(newPrice + slOffset);
+        if (dragLine) dragLine.setPrice(newPrice + slOffset); */
 
         this.setText(`${text}`);
       })
       .onMoving(function (this: OrderLine) {
         const newPrice = this.getPrice();
 
-        if (tpLine) tpLine.setPrice(newPrice + tpOffset);
+        /* if (tpLine) tpLine.setPrice(newPrice + tpOffset);
         if (slLine) slLine.setPrice(newPrice + slOffset);
-        if (dragLine) dragLine.setPrice(newPrice + slOffset);
+        if (dragLine) dragLine.setPrice(newPrice + slOffset); */
 
         this.setText(`${text}`);
       });

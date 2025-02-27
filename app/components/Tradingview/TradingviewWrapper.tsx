@@ -12,7 +12,7 @@ const TradingViewWrapper: React.FC = () => {
       <TradingViewChart />
       <PendingOrders />
       {/* <PositionLine/> */}
-      <CustomOrderLine/>
+      {/* <CustomOrderLine/> */}
     </TradingViewProvider>
   );
 };
