@@ -13,12 +13,14 @@ export interface TabIF {
 
 interface TabsProps {
     tabs: TabIF[];
+    headerRightContent?: React.ReactNode;
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs}) => {
+const Tabs: React.FC<TabsProps> = ({ tabs, headerRightContent}) => {
 
 
     const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
+    const tabsHeaderRef = useRef<HTMLDivElement>(null);
     const tabIndicatorRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {  
@@ -33,9 +35,19 @@ const Tabs: React.FC<TabsProps> = ({ tabs}) => {
     }, [])
 
     useEffect(() => {
-        if(tabIndicatorRef.current) {
-            tabIndicatorRef.current.style.left = `calc(${activeTabIndex * (100 / tabs.length)}%)`;
+
+        const tabsHeaderElement = tabsHeaderRef.current;
+
+        if(tabsHeaderElement){
+            const selectedTabElement = tabsHeaderElement.querySelectorAll(`.${styles.tab}`)[activeTabIndex];
+            if(tabIndicatorRef.current && selectedTabElement) {
+                tabIndicatorRef.current.style.left = `${(selectedTabElement as HTMLDivElement)?.offsetLeft}px`;
+                tabIndicatorRef.current.style.width = `${(selectedTabElement as HTMLDivElement)?.offsetWidth}px`;
+                // tabIndicatorRef.current.style.left = `calc(${activeTabIndex * (100 / tabs.length)}%)`;
+            }
         }
+
+
     }, [activeTabIndex])
 
 
@@ -45,8 +57,11 @@ const Tabs: React.FC<TabsProps> = ({ tabs}) => {
 <>
 
 <div className={styles.tabsContainer}>
-    <div className={styles.tabsHeader}>
-        <div className={styles.tabIndicator} style={{width: `calc(${100 / tabs.length }%)`}} ref={tabIndicatorRef}></div>
+
+    <div ref={tabsHeaderRef} className={styles.tabsHeader}>
+        <div className={styles.tabIndicator} 
+        // style={{width: `calc(${100 / tabs.length }%)`}} 
+        ref={tabIndicatorRef}></div>
         {
             tabs.map((tab, index) => (
                 <div key={index} 
@@ -55,7 +70,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs}) => {
                     {tab.label}
                 </div>
             ))
+
         }
+        {headerRightContent}
+
     </div>
     <div className={styles.tabsContent}>    
         {tabs[activeTabIndex].content}

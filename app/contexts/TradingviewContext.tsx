@@ -1,10 +1,13 @@
-import { widget, type Bar, type IChartingLibraryWidget, type ResolutionString } from "public/tradingview/charting_library";
+// import { widget, type Bar, type IChartingLibraryWidget, type ResolutionString } from "public/tradingview/charting_library";
+import { widget, type Bar, type IChartingLibraryWidget, type ResolutionString } from "~/tradingview/charting_library";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { createDataFeed } from "~/routes/chart/data/customDataFeed";
 import { useWebSocketContext } from "./WebSocketContext";
 import { useWsObserver } from "~/hooks/useWsObserver";
 import { processWSCandleMessage } from "~/routes/chart/data/processChartData";
 import { useTradeDataStore } from "~/stores/TradeDataStore";
+
+
 
 interface TradingViewContextType {
   chart: IChartingLibraryWidget | null;
