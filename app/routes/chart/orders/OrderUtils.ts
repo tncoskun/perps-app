@@ -7,6 +7,7 @@ export interface OrderLine {
   setPrice: (price: number) => void;
   setText: (text: string) => void;
   setTooltip: (tooltip: string) => any;
+  setExtendLeft: (extendLeft: boolean) => any;
   onMove: (callback: () => void) => void;
   onModify: (tooltip: string, callback: (text: string) => void) => void;
   onCancel: (tooltip: string, callback: (text: string) => void) => void;
@@ -22,6 +23,8 @@ export const addOrderLine = (
   if (!chart) return;
 
   const orderLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
+
+  let tempPrice = price;
   orderLine
     .setText(`${text}`)
     .setPrice(price)
@@ -33,109 +36,140 @@ export const addOrderLine = (
     .setCancelTooltip("Cancel order")
     .setExtendLeft(true)
     .setEditable(true)
-    // .onModify(function (this: OrderLine) {
-    //   const newPrice = this.getPrice();
-    //   this.setText(`${text}: ${newPrice.toFixed(2)}`);
-    // })
-    .setLineLength(10, "percentage");
+    .setQuantity("")
+    .setLineLength(30, "percentage");
 
-  // const tp = 99000;
-  // const sl = 99000;
-  // // TP (Take Profit)
-  // let tpLine: IOrderLineAdapter | null = null;
-  // if (tp) {
-  //   tpLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
-  //   tpLine
-  //     .setPrice(tp)
-  //     .setText("TP")
-  //     .setLineStyle(1)
-  //     .setBodyTextColor("#008000")
-  //     .setBodyBackgroundColor("#FFFFFF")
-  //     .setBodyBorderColor("#00A859")
-  //     .setTooltip("Take Profit Order")
-  //     .setLineLength(20, "percentage")
-  //     .setExtendLeft(false);
-  // }
+  const hasTp = true;
+  const hasSl = true;
+
+  // TP (Take Profit)
+  let tpLine: any | null = null;
+  if (hasTp) {
+    tpLine = addTakeProfit(chart, tempPrice, orderLine);
+  }
 
   // SL (Stop Loss)
-  // let slLine: IOrderLineAdapter | null = null;
-  // if (sl) {
-  //   slLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
-  //   slLine
-  //     .setPrice(sl)
-  //     .setText("SL")
-  //     .setLineStyle(1)
-  //     .setBodyTextColor("#FF0000")
-  //     .setBodyBackgroundColor("#FFFFFF")
-  //     .setBodyBorderColor("#FF4500")
-  //     .setTooltip("Stop Loss Order")
-  //     .setLineLength(10, "percentage")
-  //     .setExtendLeft(false);
-  // }
+  let slLine: any | null = null;
 
-  /*   const dragLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
-  dragLine
-    .setPrice(price)
-    .setText("")
-    .setLineStyle(1)
-    .setBodyTextColor("#FF0000")
-    .setBodyBackgroundColor("#FFFFFF")
-    .setBodyBorderColor("#FF4500")
-    .setLineLength(80, "percentage")
-    .setExtendLeft(false)
-    .setQuantityBackgroundColor("#FFFFFF");
- */
+  if (hasSl) {
+    slLine = addStopLoss(chart, tempPrice, orderLine);
+  }
+
   if (orderLine) {
-    // const tpOffset = tp ? tp - price : 0;
-    // const slOffset = sl ? sl - price : 0;
-
     orderLine
       .onMove(function (this: OrderLine) {
         const newPrice = this.getPrice();
-        /*    if (tpLine) tpLine.setPrice(newPrice + tpOffset);
-        if (slLine) slLine.setPrice(newPrice + slOffset);
-        if (dragLine) dragLine.setPrice(newPrice + slOffset); */
-
+        if (tpLine && tpLine.getPrice() === tempPrice)
+          tpLine.setPrice(newPrice);
+        if (slLine && slLine.getPrice() === tempPrice)
+          slLine.setPrice(newPrice);
+        tempPrice = newPrice;
         this.setText(`${text}`);
       })
       .onMoving(function (this: OrderLine) {
         const newPrice = this.getPrice();
 
-        /* if (tpLine) tpLine.setPrice(newPrice + tpOffset);
-        if (slLine) slLine.setPrice(newPrice + slOffset);
-        if (dragLine) dragLine.setPrice(newPrice + slOffset); */
-
+        if (tpLine && tpLine.getPrice() === tempPrice)
+          tpLine.setPrice(newPrice);
+        if (slLine && slLine.getPrice() === tempPrice)
+          slLine.setPrice(newPrice);
+        tempPrice = newPrice;
         this.setText(`${text}`);
       });
   }
 
-  /* const api = chart.activeChartWidget;
-  const originalCrossHairMode = api?.model().crossHairMode();
+  if (tpLine) {
+  }
 
-  const hideCrosshair = () => {
-    console.log("hideCrosshair");
-
-    // api?.model().setCrossHairMode(originalCrossHairMode.Hidden);
-  };
-
-  const showCrosshair = () => {
-    console.log("showCrosshair");
-
-    // api?.model().setCrossHairMode(originalCrossHairMode || originalCrossHairMode.Normal);
-  };
-
-  // Mouse hareketlerini dinle
-  document.addEventListener("mousemove", (event) => {
-    const mouseY = event.clientY;
-    const orderY = chart.priceToCoordinate(price);
-    const tpY = tp ? chart.priceToCoordinate(tp) : null;
-    const slY = sl ? chart.priceToCoordinate(sl) : null;
-
-    if (orderY && Math.abs(mouseY - orderY) < 10) hideCrosshair();
-    else if (tpY && Math.abs(mouseY - tpY) < 10) hideCrosshair();
-    else if (slY && Math.abs(mouseY - slY) < 10) hideCrosshair();
-    else showCrosshair();
-  });
- */
   return orderLine;
+};
+
+export const addTakeProfit = (
+  chart: any,
+  tpPrice: number,
+  orderLine: IOrderLineAdapter
+) => {
+  const tpLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
+  tpLine
+    .setPrice(tpPrice)
+    .setText("TP")
+    .setLineStyle(2)
+    .setBodyBorderColor("#00A859")
+    .setTooltip("Take Profit Order")
+    .setLineLength(20, "percentage")
+    .setExtendLeft(false)
+    .setQuantity("");
+
+  tpLine
+    .onMove(function (this: OrderLine) {
+      const newPrice = this.getPrice();
+      if (tpLine) tpLine.setPrice(newPrice);
+      const tempExtendLeft = newPrice === orderLine.getPrice() ? false : true;
+      this.setExtendLeft(tempExtendLeft);
+
+      if (tpLine) tpLine.setPrice(newPrice);
+    })
+    .onMoving(function (this: OrderLine) {
+      const newPrice = this.getPrice();
+
+      const tempExtendLeft = newPrice === orderLine.getPrice() ? false : true;
+      this.setExtendLeft(tempExtendLeft);
+
+      if (tpLine) {
+        tpLine.setPrice(newPrice);
+        tpLine.onCancel("onCancel called", function (this: IOrderLineAdapter) {
+          this.setExtendLeft(false);
+          this.setPrice(orderLine.getPrice());
+          // addTakeProfit(chart, orderLine.getPrice(), orderLine);
+          // this.remove();
+        });
+      }
+    });
+
+  return tpLine;
+};
+
+export const addStopLoss = (
+  chart: any,
+  slPrice: number,
+  orderLine: IOrderLineAdapter
+) => {
+  const tpLine = chart.activeChart().createOrderLine() as IOrderLineAdapter;
+  tpLine
+    .setPrice(slPrice)
+    .setText("SL")
+    .setLineStyle(2)
+    .setBodyBorderColor("#FF4500")
+    .setTooltip("Stop Loss Order")
+    .setLineLength(10, "percentage")
+    .setExtendLeft(false)
+    .setQuantity("");
+
+  tpLine
+    .onMove(function (this: OrderLine) {
+      const newPrice = this.getPrice();
+      if (tpLine) tpLine.setPrice(newPrice);
+      const tempExtendLeft = newPrice === orderLine.getPrice() ? false : true;
+      this.setExtendLeft(tempExtendLeft);
+
+      if (tpLine) tpLine.setPrice(newPrice);
+    })
+    .onMoving(function (this: OrderLine) {
+      const newPrice = this.getPrice();
+
+      const tempExtendLeft = newPrice === orderLine.getPrice() ? false : true;
+      this.setExtendLeft(tempExtendLeft);
+
+      if (tpLine) {
+        tpLine.setPrice(newPrice);
+        tpLine.onCancel("onCancel called", function (this: IOrderLineAdapter) {
+          this.setExtendLeft(false);
+          this.setPrice(orderLine.getPrice());
+          // addTakeProfit(chart, orderLine.getPrice(), orderLine);
+          // this.remove();
+        });
+      }
+    });
+
+  return tpLine;
 };
