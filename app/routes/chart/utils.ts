@@ -82,7 +82,7 @@ export function calculateDistance(
 
   const ratio = chart.getPriceToBarRatio();
 
-  console.log(ratio, diff, timeScale.barSpacing())
+  // console.log(ratio, diff, timeScale.barSpacing())
 
   // const timeCenter = activeShapePoints[0].time;
   // const diameterPoint = activeShapePoints[1].time;
