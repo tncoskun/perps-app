@@ -6,10 +6,7 @@ export const addOrderLine = (
   quantity: string,
   isSell: boolean
 ) => {
-  if (!chart) return;
-
-  console.log('sdasdadaasdas',price);
-  
+  if (!chart) return;  
   const buyColor = "#26A69A";
   const sellColor = "#EF5350";
 
