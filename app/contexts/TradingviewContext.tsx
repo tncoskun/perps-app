@@ -107,6 +107,7 @@ export const TradingViewProvider: React.FC<{ children: React.ReactNode }> = ({
         { text: "4H", resolution: "240" as ResolutionString },
         { text: "1D", resolution: "1D" as ResolutionString },
       ],
+      disabled_features: ["volume_force_overlay"],
     });
 
     setChart(tvWidget);
