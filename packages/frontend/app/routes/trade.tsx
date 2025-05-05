@@ -17,6 +17,7 @@ import WatchList from './trade/watchlist/watchlist';
 import WebDataConsumer from './trade/webdataconsumer';
 
 import ComboBoxContainer from '~/components/Inputs/ComboBox/ComboBoxContainer';
+import { useHandleSwipeBack } from './chart/data/utils/utils';
 
 export function loader({ context }: Route.LoaderArgs) {
     return { message: context.VALUE_FROM_NETLIFY };
@@ -30,10 +31,19 @@ export default function Trade() {
     const { marketId } = useParams<{ marketId: string }>();
     const navigate = useNavigate();
 
+    const tradePageRef = useRef<HTMLDivElement | null>(null);
     // useEffect(() => {
     //     const info = new Info({ environment: 'mock' });
     //     console.log({ wsManager: info.wsManager });
     // }, []);
+
+    useEffect(() => {
+        const tradeDiv = tradePageRef.current;
+
+        if (tradeDiv) {
+            useHandleSwipeBack(tradeDiv);
+        }
+    }, [tradePageRef.current]);
 
     // logic to automatically redirect the user if they land on a
     // ... route with no token symbol in the URL
@@ -46,7 +56,7 @@ export default function Trade() {
             <TradeRouteHandler />
             <WebDataConsumer />
             {symbol && (
-                <div className={styles.container}>
+                <div ref={tradePageRef} className={styles.container}>
                     <section
                         className={`${styles.containerTop} ${orderBookMode === 'large' ? styles.orderBookLarge : ''}`}
                     >
