@@ -3,7 +3,6 @@ import type { OrderDataIF } from '~/utils/orderbook/OrderBookIFs';
 import type { PositionIF } from '~/utils/position/PositionIFs';
 import type { AccountOverviewIF, UserBalanceIF } from '~/utils/UserDataIFs';
 
-const limit = 10;
 export interface UserTradeDataStore {
     userOrders: OrderDataIF[];
     userSymbolOrders: OrderDataIF[];
@@ -30,9 +29,9 @@ export const createUserTradesSlice = (set: any, get: any) => ({
     userOrders: [],
     userSymbolOrders: [],
     setUserOrders: (userOrders: OrderDataIF[]) => {
-        set({ userOrders: userOrders.slice(0, limit) });
+        set({ userOrders: userOrders });
         get().setUserSymbolOrders(
-            userOrders.filter((e) => e.coin === get().symbol).slice(0, limit),
+            userOrders.filter((e) => e.coin === get().symbol),
         );
     },
     setUserSymbolOrders: (userSymbolOrders: OrderDataIF[]) => {

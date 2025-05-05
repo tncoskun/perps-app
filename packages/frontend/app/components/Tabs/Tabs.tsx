@@ -62,6 +62,7 @@ export default function Tabs(props: TabsProps) {
     } = props;
 
     const {
+        webDataFetched,
         userBalances: { length: balancesCount },
         positions: { length: positionsCount },
         userOrders: { length: openOrdersCount },
@@ -77,11 +78,19 @@ export default function Tabs(props: TabsProps) {
         tab: string | { id: string; label: string },
     ): string => {
         let label = typeof tab === 'string' ? tab : tab.label;
-        if (label === 'Balances' && balancesCount > 0) {
+        if (label === 'Balances' && webDataFetched && balancesCount > 0) {
             label = `Balances (${balancesCount})`;
-        } else if (label === 'Positions' && positionsCount > 0) {
+        } else if (
+            label === 'Positions' &&
+            webDataFetched &&
+            positionsCount > 0
+        ) {
             label = `Positions (${positionsCount})`;
-        } else if (label === 'Open Orders' && openOrdersCount > 0) {
+        } else if (
+            label === 'Open Orders' &&
+            webDataFetched &&
+            openOrdersCount > 0
+        ) {
             label = `Open Orders (${openOrdersCount})`;
         }
         return label;

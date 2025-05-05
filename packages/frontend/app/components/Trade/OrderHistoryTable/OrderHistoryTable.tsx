@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { ApiEndpoints, useInfoApi } from '~/hooks/useInfoApi';
 import { useSdk } from '~/hooks/useSdk';
 import { processUserOrder } from '~/processors/processOrderBook';
@@ -10,6 +16,9 @@ import styles from './OrderHistoryTable.module.css';
 import OrderHistoryTableHeader from './OrderHistoryTableHeader';
 import OrderHistoryTableRow from './OrderHistoryTableRow';
 import { orderHistoryData } from './data';
+import { TableState } from '~/utils/CommonIFs';
+import SkeletonTable from '~/components/Skeletons/SkeletonTable/SkeletonTable';
+import NoDataRow from '~/components/Skeletons/NoDataRow';
 
 interface OrderHistoryTableProps {
     onViewAll?: () => void;
@@ -40,6 +49,10 @@ export default function OrderHistoryTable(props: OrderHistoryTableProps) {
     const isWsEnabledRef = useRef<boolean>(true);
     isWsEnabledRef.current = isWsEnabled;
 
+    const [tableState, setTableState] = useState<TableState>(
+        TableState.LOADING,
+    );
+
     useEffect(() => {
         const saveIntoStoreInterval = setInterval(() => {
             if (!isWsEnabledRef.current) {
@@ -58,6 +71,7 @@ export default function OrderHistoryTable(props: OrderHistoryTableProps) {
 
     useEffect(() => {
         setOrderHistory([]);
+        setTableState(TableState.LOADING);
 
         fetchData({
             type: ApiEndpoints.HISTORICAL_ORDERS,
@@ -77,7 +91,10 @@ export default function OrderHistoryTable(props: OrderHistoryTableProps) {
                             orders.push(processedOrder);
                         }
                     });
+                    setTableState(TableState.FILLED);
                     setOrderHistory(orders);
+                } else {
+                    setTableState(TableState.EMPTY);
                 }
             },
         });
@@ -138,34 +155,37 @@ export default function OrderHistoryTable(props: OrderHistoryTableProps) {
 
     return (
         <div className={styles.tableWrapper}>
-            <OrderHistoryTableHeader />
-            <div className={styles.tableBody}>
-                {orderHistoryToShow.map((order, index) => (
-                    <OrderHistoryTableRow
-                        key={`order-${index}`}
-                        order={order}
-                    />
-                ))}
+            {tableState === TableState.LOADING ? (
+                <SkeletonTable
+                    rows={7}
+                    colRatios={[1, 2, 2, 1, 1, 2, 1, 1, 2, 3, 1]}
+                />
+            ) : (
+                <>
+                    <OrderHistoryTableHeader />
+                    <div className={styles.tableBody}>
+                        {tableState === TableState.FILLED && (
+                            <>
+                                {orderHistoryToShow.map((order, index) => (
+                                    <OrderHistoryTableRow
+                                        key={`order-${index}`}
+                                        order={order}
+                                    />
+                                ))}
+                                <a
+                                    href='#'
+                                    className={styles.viewAllLink}
+                                    onClick={handleViewAll}
+                                >
+                                    View All
+                                </a>
+                            </>
+                        )}
 
-                {orderHistoryData.length === 0 && (
-                    <div
-                        className={styles.rowContainer}
-                        style={{ justifyContent: 'center', padding: '2rem 0' }}
-                    >
-                        No order history
+                        {tableState === TableState.EMPTY && <NoDataRow />}
                     </div>
-                )}
-
-                {orderHistoryData.length > 0 && (
-                    <a
-                        href='#'
-                        className={styles.viewAllLink}
-                        onClick={handleViewAll}
-                    >
-                        View All
-                    </a>
-                )}
-            </div>
+                </>
+            )}
         </div>
     );
 }

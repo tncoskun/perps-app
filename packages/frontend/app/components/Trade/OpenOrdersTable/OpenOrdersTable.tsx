@@ -1,12 +1,15 @@
-import React, { useMemo, useState } from 'react';
-import OpenOrdersTableHeader from './OpenOrdersTableHeader';
-import OpenOrdersTableRow, { type OpenOrderData } from './OpenOrdersTableRow';
-import styles from './OpenOrdersTable.module.css';
-import { openOrdersData } from './data';
+import { useEffect, useMemo, useState } from 'react';
+import SkeletonTable from '~/components/Skeletons/SkeletonTable/SkeletonTable';
 import { useTradeDataStore } from '~/stores/TradeDataStore';
-import type { OrderDataSortBy } from '~/utils/orderbook/OrderBookIFs';
 import type { TableSortDirection } from '~/utils/CommonIFs';
+import { TableState } from '~/utils/CommonIFs';
+import type { OrderDataSortBy } from '~/utils/orderbook/OrderBookIFs';
 import { sortOrderData } from '~/utils/orderbook/OrderBookUtils';
+import styles from './OpenOrdersTable.module.css';
+import OpenOrdersTableHeader from './OpenOrdersTableHeader';
+import OpenOrdersTableRow from './OpenOrdersTableRow';
+import { openOrdersData } from './data';
+import NoDataRow from '~/components/Skeletons/NoDataRow';
 interface OpenOrdersTableProps {
     onCancel?: (time: number, coin: string) => void;
     onViewAll?: () => void;
@@ -15,6 +18,10 @@ interface OpenOrdersTableProps {
 
 export default function OpenOrdersTable(props: OpenOrdersTableProps) {
     const { onCancel, onViewAll, selectedFilter } = props;
+
+    const [tableState, setTableState] = useState<TableState>(
+        TableState.LOADING,
+    );
 
     const [sortDirection, setSortDirection] = useState<TableSortDirection>();
     const [sortBy, setSortBy] = useState<OrderDataSortBy>();
@@ -31,7 +38,8 @@ export default function OpenOrdersTable(props: OpenOrdersTableProps) {
         }
     };
 
-    const { userSymbolOrders, userOrders } = useTradeDataStore();
+    const { userSymbolOrders, userOrders, webDataFetched } =
+        useTradeDataStore();
 
     const openOrdersLimit = 10;
 
@@ -54,7 +62,7 @@ export default function OpenOrdersTable(props: OpenOrdersTableProps) {
         return sortOrderData(filteredOrders, sortBy, sortDirection);
     }, [filteredOrders, sortBy, sortDirection]);
 
-    const slicedOrders = useMemo(() => {
+    const ordersToShow = useMemo(() => {
         return sortedOrders.slice(0, openOrdersLimit);
     }, [sortedOrders]);
 
@@ -74,44 +82,62 @@ export default function OpenOrdersTable(props: OpenOrdersTableProps) {
         }
     };
 
+    useEffect(() => {
+        if (webDataFetched) {
+            if (ordersToShow.length === 0) {
+                setTableState(TableState.EMPTY);
+            } else {
+                setTableState(TableState.FILLED);
+            }
+        } else {
+            setTableState(TableState.LOADING);
+        }
+    }, [ordersToShow, webDataFetched]);
+
     return (
         <div className={styles.tableWrapper}>
-            <OpenOrdersTableHeader
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                sortClickHandler={handleSort}
-            />
-            <div className={styles.tableBody}>
-                {slicedOrders.map((order, index) => (
-                    <OpenOrdersTableRow
-                        key={`order-${order.oid}`}
-                        order={order}
-                        onCancel={handleCancel}
+            {tableState === TableState.LOADING ? (
+                <SkeletonTable
+                    rows={7}
+                    colRatios={[1, 2, 2, 1, 1, 2, 1, 1, 2, 3, 1]}
+                />
+            ) : (
+                <>
+                    <OpenOrdersTableHeader
+                        sortBy={sortBy}
+                        sortDirection={sortDirection}
+                        sortClickHandler={handleSort}
                     />
-                ))}
+                    <div className={styles.tableBody}>
+                        {tableState === TableState.FILLED && (
+                            <>
+                                {ordersToShow.map((order, index) => (
+                                    <OpenOrdersTableRow
+                                        key={`order-${order.oid}`}
+                                        order={order}
+                                        onCancel={handleCancel}
+                                    />
+                                ))}
 
-                {openOrdersData.length === 0 && (
-                    <div
-                        className={styles.rowContainer}
-                        style={{ justifyContent: 'center', padding: '2rem 0' }}
-                    >
-                        No open orders
+                                {openOrdersData.length > 0 && (
+                                    <a
+                                        href='#'
+                                        className={styles.viewAllLink}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleViewAll();
+                                        }}
+                                    >
+                                        View All
+                                    </a>
+                                )}
+                            </>
+                        )}
+
+                        {tableState === TableState.EMPTY && <NoDataRow />}
                     </div>
-                )}
-
-                {openOrdersData.length > 0 && (
-                    <a
-                        href='#'
-                        className={styles.viewAllLink}
-                        onClick={(e) => {
-                            e.preventDefault();
-                            handleViewAll();
-                        }}
-                    >
-                        View All
-                    </a>
-                )}
-            </div>
+                </>
+            )}
         </div>
     );
 }

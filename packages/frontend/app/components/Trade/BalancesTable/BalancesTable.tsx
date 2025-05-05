@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import SkeletonTable from '~/components/Skeletons/SkeletonTable/SkeletonTable';
 import { sortUserBalances } from '~/processors/processUserBalance';
 import { useTradeDataStore } from '~/stores/TradeDataStore';
 import type { TableSortDirection } from '~/utils/CommonIFs';
+import { TableState } from '~/utils/CommonIFs';
 import type { UserBalanceSortBy } from '~/utils/UserDataIFs';
 import styles from './BalancesTable.module.css';
 import BalancesTableHeader from './BalancesTableHeader';
 import BalancesTableRow from './BalancesTableRow';
+import NoDataRow from '~/components/Skeletons/NoDataRow';
 
 type BalancesTableProps = {
     hideSmallBalances: boolean;
@@ -16,7 +19,11 @@ export default function BalancesTable(props: BalancesTableProps) {
 
     const smallBalanceThreshold = 10;
 
-    const { userBalances } = useTradeDataStore();
+    const { userBalances, webDataFetched } = useTradeDataStore();
+
+    const [tableState, setTableState] = useState<TableState>(
+        TableState.LOADING,
+    );
 
     const [sortBy, setSortBy] = useState<UserBalanceSortBy>();
     const [sortDirection, setSortDirection] = useState<TableSortDirection>();
@@ -41,7 +48,7 @@ export default function BalancesTable(props: BalancesTableProps) {
         return sortUserBalances(userBalances, sortBy, sortDirection);
     }, [userBalances, sortBy, sortDirection]);
 
-    const filteredBalances = useMemo(() => {
+    const balancesToShow = useMemo(() => {
         if (hideSmallBalances) {
             return sortedBalances.filter((balance) => {
                 return balance.usdcValue > smallBalanceThreshold;
@@ -50,30 +57,45 @@ export default function BalancesTable(props: BalancesTableProps) {
         return sortedBalances;
     }, [sortedBalances, hideSmallBalances]);
 
+    useEffect(() => {
+        if (webDataFetched) {
+            if (balancesToShow.length === 0) {
+                setTableState(TableState.EMPTY);
+            } else {
+                setTableState(TableState.FILLED);
+            }
+        } else {
+            setTableState(TableState.LOADING);
+        }
+    }, [balancesToShow, webDataFetched]);
+
     return (
         <div className={styles.tableWrapper}>
-            <BalancesTableHeader
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                sortClickHandler={handleSort}
-            />
-            <div className={styles.tableBody}>
-                {filteredBalances.map((balance, index) => (
-                    <BalancesTableRow
-                        key={`balance-${index}`}
-                        balance={balance}
+            {tableState === TableState.LOADING ? (
+                <SkeletonTable rows={7} colRatios={[1, 2, 2, 1, 1, 1, 3]} />
+            ) : (
+                <>
+                    <BalancesTableHeader
+                        sortBy={sortBy}
+                        sortDirection={sortDirection}
+                        sortClickHandler={handleSort}
                     />
-                ))}
+                    <div className={styles.tableBody}>
+                        {tableState === TableState.FILLED && (
+                            <>
+                                {balancesToShow.map((balance, index) => (
+                                    <BalancesTableRow
+                                        key={`balance-${index}`}
+                                        balance={balance}
+                                    />
+                                ))}
+                            </>
+                        )}
 
-                {userBalances.length === 0 && (
-                    <div
-                        className={styles.container}
-                        style={{ justifyContent: 'center', padding: '2rem 0' }}
-                    >
-                        No data to display
+                        {tableState === TableState.EMPTY && <NoDataRow />}
                     </div>
-                )}
-            </div>
+                </>
+            )}
         </div>
     );
 }

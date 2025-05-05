@@ -31,6 +31,8 @@ type TradeDataStore = UserTradeDataStore & {
     setSelectedCurrency: (currency: string) => void;
     selectedTradeTab: string;
     setSelectedTradeTab: (tab: string) => void;
+    webDataFetched: boolean;
+    setWebDataFetched: (fetched: boolean) => void;
 };
 
 const useTradeDataStore = create<TradeDataStore>()(
@@ -104,6 +106,9 @@ const useTradeDataStore = create<TradeDataStore>()(
             setSelectedTradeTab: (tab: string) => {
                 set({ selectedTradeTab: tab });
             },
+            webDataFetched: false,
+            setWebDataFetched: (fetched: boolean) =>
+                set({ webDataFetched: fetched }),
         }),
         {
             name: 'TRADE_DATA',

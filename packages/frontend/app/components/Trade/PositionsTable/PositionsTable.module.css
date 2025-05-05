@@ -6,7 +6,10 @@
     display: grid;
     grid-template-columns: 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 1.2fr;
     align-items: center;
+    position: relative;
 }
+
+  
 
 .headerContainer {
     background: var(--dark2);
@@ -136,6 +139,32 @@
     justify-self: end;
     padding-right: 8px;
 }
+
+/* .coinCellRed{
+    background: linear-gradient(
+        to right,
+        rgba(255, 0, 0, 0.8) 0%,
+        rgba(255, 0, 0, 0.5) 5%,
+        rgba(255, 0, 0, 0.2) 14%,
+        transparent 10%
+      ) !important;
+          padding-left: 8px;
+          border-left: 1px solid var(--red);
+
+}
+
+.coinCellGreen{
+    background: linear-gradient(
+        to right,
+        rgba(7, 233, 108, 0.8) 0%,
+        rgba(11, 139, 2, 0.5) 5%,
+        rgba(255, 0, 0, 0.2) 14%,
+        transparent 10%
+      ) !important;
+          padding-left: 8px;
+        border-left: 1px solid var(--green);
+} */
+
 @media (max-width: 1400px) {
     .rowContainer,
     .headerContainer {
