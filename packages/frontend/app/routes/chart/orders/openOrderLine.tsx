@@ -112,7 +112,9 @@ const OpenOrderLine = () => {
                 };
             });
 
-        setLines(newLines);
+            console.log({newLines});
+            
+        setLines([]);
     }, [
         chart,
         JSON.stringify(userSymbolOrders),

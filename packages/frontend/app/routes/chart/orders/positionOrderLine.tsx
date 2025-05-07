@@ -61,7 +61,7 @@ const PositionOrderLine = () => {
             return [pnlLine, liqLine];
         });
 
-        setLines(newLines);
+        setLines([]);
     }, [chart, JSON.stringify(filteredPositions), symbol]);
 
     if (!chart) return null;

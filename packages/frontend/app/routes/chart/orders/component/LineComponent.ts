@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from 'react';
 import { useTradingView } from '~/contexts/TradingviewContext';
+import * as d3 from 'd3';
 
 import type {
     EntityId,
@@ -400,6 +401,95 @@ const LineComponent = ({ lines, orderType }: LineProps) => {
         zoomChanged,
     ]);
 
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+
+    useEffect(() => {
+        if (!chart) return;
+    
+        const chartDiv = document.getElementById('tv_chart');
+        const iframe = chartDiv?.querySelector('iframe') as HTMLIFrameElement;
+        const iframeDoc = iframe?.contentDocument;
+    
+        if (!iframeDoc) return;
+    
+        const paneCanvas = iframeDoc.querySelector('canvas[data-name="pane-canvas"]') as HTMLCanvasElement;
+        if (!paneCanvas || !paneCanvas.parentNode) return;
+    
+        // Yeni canvas daha önce eklenmediyse ekle
+        if (!canvasRef.current) {
+            const newCanvas = iframeDoc.createElement('canvas');
+            newCanvas.width = paneCanvas.width;
+            newCanvas.height = paneCanvas.height;
+            newCanvas.style.position = 'absolute';
+            newCanvas.style.top = '0';
+            newCanvas.style.left = '0';
+            newCanvas.style.pointerEvents = 'none';
+    
+            paneCanvas.insertAdjacentElement('afterend', newCanvas);
+            canvasRef.current = newCanvas;
+            ctxRef.current = newCanvas.getContext('2d');
+        }
+    
+        const ctx = ctxRef.current;
+        if (!ctx) return;
+    
+        // === YENİDEN ÇİZİM ===
+        const chartRef = chart.activeChart();
+        const priceScalePane = chartRef.getPanes()[0] as IPaneApi;
+        const priceScale = priceScalePane.getMainSourcePriceScale();
+        const priceRange = priceScale?.getVisiblePriceRange();
+        if (!priceRange) return;
+    
+        const price = 96051;
+        const label = 'Limit: 96051';
+    
+        const currentRange = {
+            min: priceRange.from,
+            max: priceRange.to,
+        };
+    
+        const yScale = d3
+            .scaleLinear()
+            .domain([currentRange.min, currentRange.max])
+            .range([paneCanvas.height, 0]);
+    
+        const y = yScale(price);
+    
+        ctx.clearRect(0, 0, paneCanvas.width, paneCanvas.height);
+    
+        const text = `${label}  ${price.toFixed(5)}`;
+        ctx.font = '12px sans-serif';
+        const textWidth = ctx.measureText(text).width;
+        const padding = 4;
+        const boxHeight = 20;
+        const boxWidth = textWidth + padding * 2;
+    
+        const boxX = paneCanvas.width / 2 - boxWidth / 2;
+        const boxY = y - boxHeight / 2;
+    
+        // Çizgi
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.moveTo(0, y);
+        ctx.lineTo(paneCanvas.width, y);
+        ctx.stroke();
+        ctx.restore();
+    
+        // Label Box
+        ctx.fillStyle = '#1E1E1E';
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+    
+        ctx.strokeStyle = '#00BCD4';
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+    
+        ctx.fillStyle = '#fff';
+        ctx.fillText(text, boxX + padding, boxY + 14);
+    }, [zoomChanged, chart]);
+    
     useEffect(() => {
         const handleMouseMove = (params: any) => {
             if (chart) {

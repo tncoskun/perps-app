@@ -12,5 +12,12 @@
     "devDependencies": {
         "husky": "^9.1.7",
         "prettier": "^3.5.3"
+    },
+    "dependencies": {
+        "@types/d3": "^7.4.3",
+        "d3": "^7.9.0",
+        "d3-scale": "^4.0.2",
+        "d3-shape": "^3.2.0",
+        "d3fc": "^15.2.13"
     }
 }
