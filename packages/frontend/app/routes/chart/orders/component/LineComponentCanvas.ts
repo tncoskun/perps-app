@@ -4,7 +4,7 @@ import { useTradingView } from '~/contexts/TradingviewContext';
 
 import type {
     EntityId,
-    IChartingLibraryWidget,
+    // IChartingLibraryWidget,
     IPaneApi,
 } from '~/tv/charting_library';
 import {
@@ -12,16 +12,18 @@ import {
     createAnchoredMainText,
     createCancelAnchoredText,
     createQuantityAnchoredText,
-    estimateTextWidth,
-    formatLineLabel,
+    // estimateTextWidth,
+    // formatLineLabel,
     getAnchoredCancelButtonTextLocation,
     getAnchoredQuantityTextLocation,
+    getPricetoPixel,
     isInsideCancelTextBounds,
     isInsideTextBounds,
-    priceToPixel,
+    // priceToPixel,
+    // priceToPixel,
     quantityTextFormatWithComma,
-    type LineLabel,
-} from '../customOrderLineUtils';
+} from '../customOrderLineCanvasUtils';
+import type { LineLabel } from '../customOrderLineUtils';
 
 export type LineData = {
     xLoc: number;
@@ -39,15 +41,13 @@ interface LineProps {
 
 export type ChartShapeRefs = {
     lineId: EntityId;
-    textId?: EntityId;
+    textId: EntityId;
     quantityTextId?: EntityId;
     cancelButtonTextId?: EntityId;
 };
 
-const LineComponent = ({ lines, orderType }: LineProps) => {
+const LineComponentCanvas = ({ lines, orderType }: LineProps) => {
     const { chart, isChartReady } = useTradingView();
-
-    console.log({ orderType });
 
     const orderLineItemsRef = useRef<ChartShapeRefs[]>([]);
 
@@ -55,16 +55,47 @@ const LineComponent = ({ lines, orderType }: LineProps) => {
     const [localChartReady, setLocalChartReady] = useState(true);
 
     const cleanupInProgressRef = useRef(false);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
-    const removeShapeById = async (
-        chart: IChartingLibraryWidget,
-        id: EntityId,
-    ) => {
-        const chartRef = chart.activeChart();
+    useEffect(() => {
+        if (!chart) return;
 
-        const element = chartRef.getShapeById(id);
-        if (element) chartRef.removeEntity(id);
-    };
+        const chartDiv = document.getElementById('tv_chart');
+        const iframe = chartDiv?.querySelector('iframe') as HTMLIFrameElement;
+        const iframeDoc = iframe?.contentDocument;
+
+        if (!iframeDoc) return;
+
+        const paneCanvas = iframeDoc.querySelector(
+            'canvas[data-name="pane-canvas"]',
+        ) as HTMLCanvasElement;
+        if (!paneCanvas || !paneCanvas.parentNode) return;
+
+        if (!canvasRef.current) {
+            const newCanvas = iframeDoc.createElement('canvas');
+            newCanvas.width = paneCanvas.width;
+            newCanvas.height = paneCanvas.height;
+            newCanvas.style.position = 'absolute';
+            newCanvas.style.top = '0';
+            newCanvas.style.left = '0';
+            newCanvas.style.pointerEvents = 'none';
+
+            paneCanvas.insertAdjacentElement('afterend', newCanvas);
+            canvasRef.current = newCanvas;
+            ctxRef.current = newCanvas.getContext('2d');
+        }
+    }, [chart]);
+
+    // const removeShapeById = async (
+    //     chart: IChartingLibraryWidget,
+    //     id: EntityId,
+    // ) => {
+    //     const chartRef = chart.activeChart();
+
+    //     const element = chartRef.getShapeById(id);
+    //     if (element) chartRef.removeEntity(id);
+    // };
     const cleanupShapes = async () => {
         if (cleanupInProgressRef.current) {
             return;
@@ -204,210 +235,186 @@ const LineComponent = ({ lines, orderType }: LineProps) => {
     }, [isChartReady]);
 
     useEffect(() => {
-        const setupShapes = async () => {
-            if (!chart) return;
+        if (!chart || !localChartReady || !isChartReady) return;
 
-            const currentCount = orderLineItemsRef.current.length;
-            const newCount = lines.length;
+        const ctx = ctxRef.current;
+        if (!ctx) return;
 
-            if (currentCount > newCount) {
-                const toRemove = orderLineItemsRef.current.slice(newCount);
-                for (const shape of toRemove) {
-                    removeShapeById(chart, shape.lineId);
-                    if (shape.textId) removeShapeById(chart, shape.textId);
-                    if (shape.quantityTextId)
-                        removeShapeById(chart, shape.quantityTextId);
-                    if (shape.cancelButtonTextId)
-                        removeShapeById(chart, shape.cancelButtonTextId);
-                }
-                orderLineItemsRef.current.length = newCount;
-            }
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-            if (currentCount < newCount) {
-                for (let i = currentCount; i < newCount; i++) {
-                    const line = lines[i];
-                    const shapeRefs: ChartShapeRefs = {
-                        lineId: await addCustomOrderLine(
-                            chart,
-                            line.yPrice,
-                            line.color,
-                        ),
-                        textId: undefined /* await createAnchoredMainText(
-                            chart,
-                            line.xLoc,
-                            line.yPrice,
-                            line.textValue,
-                            line.color,
-                        ), */,
-                        quantityTextId: /* line.quantityTextValue
-                            ? await createQuantityAnchoredText(
-                                  chart,
-                                  getAnchoredQuantityTextLocation(
-                                      chart,
-                                      line.xLoc,
-                                      line.textValue,
-                                  ),
-                                  line.yPrice,
-                                  quantityTextFormatWithComma(
-                                      line.quantityTextValue,
-                                  ),
-                              )
-                            : */ undefined,
-                        cancelButtonTextId: /* 
-                            orderType === 'openOrder'
-                                ? await createCancelAnchoredText(
-                                      chart,
-                                      getAnchoredCancelButtonTextLocation(
-                                          chart,
-                                          line.xLoc,
-                                          line.textValue,
-                                          line.quantityTextValue
-                                              ? quantityTextFormatWithComma(
-                                                    line.quantityTextValue,
-                                                )
-                                              : undefined,
-                                      ),
-                                      line.yPrice,
-                                  )
-                                : */ undefined,
-                    };
-                    orderLineItemsRef.current.push(shapeRefs);
-                }
-            }
+        lines.forEach((line) => {
+            const yPricePixel = getPricetoPixel(chart, line.yPrice).pixel;
+            const timeScale = chart.activeChart().getTimeScale();
+            const chartWidth = Math.floor(timeScale.width());
 
-            setOrderLineItems([...orderLineItemsRef.current]);
-        };
+            const xPixel = chartWidth * line.xLoc;
+            addCustomOrderLine(ctx, yPricePixel, line.color);
 
-        if (localChartReady && isChartReady) {
-            setupShapes();
-        }
-    }, [chart, isChartReady, localChartReady, lines.length]);
+            createAnchoredMainText(
+                ctx,
+                xPixel,
+                yPricePixel,
+                line.textValue,
+                line.color,
+            );
 
-    useEffect(() => {
-        let isCancelled = false;
-        const intervals: number[] = [];
-
-        const updateSingleLine = (item: ChartShapeRefs, lineData: LineData) => {
-            if (!chart) return;
-
-            const activeChart = chart.activeChart();
-
-            const { lineId, textId, quantityTextId, cancelButtonTextId } = item;
-            const pricePerPixel = priceToPixel(chart, lineData.yPrice);
-
-            const activeLabel = activeChart.getShapeById(textId);
-            if (activeLabel) {
-                const activeLabelText = formatLineLabel(lineData.textValue);
-                activeLabel.setProperties({
-                    text: activeLabelText,
-                    wordWrapWidth: estimateTextWidth(activeLabelText),
-                    linecolor: lineData.color,
-                    borderColor: lineData.color,
-                });
-                activeLabel.setAnchoredPosition({
-                    x: lineData.xLoc,
-                    y: pricePerPixel,
-                });
-            }
-
-            if (quantityTextId && lineData.quantityTextValue) {
-                const quantityText = quantityTextFormatWithComma(
-                    lineData.quantityTextValue,
+            if (line.quantityTextValue !== undefined) {
+                const quantityX =
+                    getAnchoredQuantityTextLocation(
+                        chart,
+                        line.xLoc,
+                        line.textValue,
+                    ) * chartWidth;
+                createQuantityAnchoredText(
+                    ctx,
+                    quantityX,
+                    yPricePixel,
+                    quantityTextFormatWithComma(line.quantityTextValue),
                 );
-                const activeQuantityLabel =
-                    activeChart.getShapeById(quantityTextId);
-                if (activeQuantityLabel) {
-                    activeQuantityLabel.setAnchoredPosition({
-                        x: getAnchoredQuantityTextLocation(
-                            chart,
-                            lineData.xLoc,
-                            lineData.textValue,
-                        ),
-                        y: pricePerPixel,
-                    });
-                    activeQuantityLabel.setProperties({
-                        text: quantityText,
-                        wordWrapWidth: estimateTextWidth(quantityText) + 15,
-                    });
-                }
             }
 
-            if (cancelButtonTextId) {
-                const activeCancelButtonLabel =
-                    activeChart.getShapeById(cancelButtonTextId);
-                if (activeCancelButtonLabel) {
-                    activeCancelButtonLabel.setAnchoredPosition({
-                        x: getAnchoredCancelButtonTextLocation(
-                            chart,
-                            lineData.xLoc,
-                            lineData.textValue,
-                            lineData.quantityTextValue
-                                ? quantityTextFormatWithComma(
-                                      lineData.quantityTextValue,
-                                  )
-                                : undefined,
-                        ),
-                        y: pricePerPixel,
-                    });
-                }
+            if (orderType === 'openOrder') {
+                const cancelX =
+                    getAnchoredCancelButtonTextLocation(
+                        chart,
+                        line.xLoc,
+                        line.textValue,
+                        line.quantityTextValue
+                            ? quantityTextFormatWithComma(
+                                  line.quantityTextValue,
+                              )
+                            : undefined,
+                    ) * chartWidth;
+                createCancelAnchoredText(ctx, cancelX, yPricePixel);
             }
+        });
+    }, [chart, isChartReady, localChartReady, lines, orderType]);
 
-            const activeLine = activeChart.getShapeById(lineId);
-            if (activeLine) {
-                activeLine.setPoints([{ time: 10, price: lineData.yPrice }]);
-                activeLine.setProperties({
-                    linecolor: lineData.color,
-                    borderColor: lineData.color,
-                });
-            }
-        };
+    // useEffect(() => {
+    //     let isCancelled = false;
+    //     const intervals: number[] = [];
 
-        const updateTextPositionOnce = () => {
-            orderLineItems.forEach((item, i) => {
-                updateSingleLine(item, lines[i]);
-            });
-        };
+    //     const updateSingleLine = (item: ChartShapeRefs, lineData: LineData) => {
+    //         if (!chart) return;
 
-        const startZoomInterval = () => {
-            orderLineItems.forEach((item, i) => {
-                const interval = setInterval(() => {
-                    if (!isCancelled) {
-                        updateSingleLine(item, lines[i]);
-                    }
-                }, 10) as unknown as number;
-                intervals.push(interval);
-            });
-        };
+    //         const activeChart = chart.activeChart();
 
-        if (
-            !chart ||
-            orderLineItems.length === 0 ||
-            lines.length === 0 ||
-            orderLineItems.length !== lines.length ||
-            !(localChartReady && isChartReady)
-        )
-            return;
+    //         const { lineId, textId, quantityTextId, cancelButtonTextId } = item;
+    //         const pricePerPixel = priceToPixel(chart, lineData.yPrice);
 
-        if (zoomChanged) {
-            startZoomInterval();
-        } else {
-            updateTextPositionOnce();
-        }
+    //         const activeLabel = activeChart.getShapeById(textId);
+    //         if (activeLabel) {
+    //             const activeLabelText = formatLineLabel(lineData.textValue);
+    //             activeLabel.setProperties({
+    //                 text: activeLabelText,
+    //                 wordWrapWidth: estimateTextWidth(activeLabelText),
+    //                 linecolor: lineData.color,
+    //                 borderColor: lineData.color,
+    //             });
+    //             activeLabel.setAnchoredPosition({
+    //                 x: lineData.xLoc,
+    //                 y: pricePerPixel,
+    //             });
+    //         }
 
-        // chart.activeChart().getPanes()[1].moveTo(0);
+    //         if (quantityTextId && lineData.quantityTextValue) {
+    //             const quantityText = quantityTextFormatWithComma(
+    //                 lineData.quantityTextValue,
+    //             );
+    //             const activeQuantityLabel =
+    //                 activeChart.getShapeById(quantityTextId);
+    //             if (activeQuantityLabel) {
+    //                 activeQuantityLabel.setAnchoredPosition({
+    //                     x: getAnchoredQuantityTextLocation(
+    //                         chart,
+    //                         lineData.xLoc,
+    //                         lineData.textValue,
+    //                     ),
+    //                     y: pricePerPixel,
+    //                 });
+    //                 activeQuantityLabel.setProperties({
+    //                     text: quantityText,
+    //                     wordWrapWidth: estimateTextWidth(quantityText) + 15,
+    //                 });
+    //             }
+    //         }
 
-        return () => {
-            isCancelled = true;
-            intervals.forEach(clearInterval);
-        };
-    }, [
-        JSON.stringify(orderLineItems),
-        chart,
-        JSON.stringify(lines),
-        zoomChanged,
-        localChartReady,
-        isChartReady,
-    ]);
+    //         if (cancelButtonTextId) {
+    //             const activeCancelButtonLabel =
+    //                 activeChart.getShapeById(cancelButtonTextId);
+    //             if (activeCancelButtonLabel) {
+    //                 activeCancelButtonLabel.setAnchoredPosition({
+    //                     x: getAnchoredCancelButtonTextLocation(
+    //                         chart,
+    //                         lineData.xLoc,
+    //                         lineData.textValue,
+    //                         lineData.quantityTextValue
+    //                             ? quantityTextFormatWithComma(
+    //                                   lineData.quantityTextValue,
+    //                               )
+    //                             : undefined,
+    //                     ),
+    //                     y: pricePerPixel,
+    //                 });
+    //             }
+    //         }
+
+    //         const activeLine = activeChart.getShapeById(lineId);
+    //         if (activeLine) {
+    //             activeLine.setPoints([{ time: 10, price: lineData.yPrice }]);
+    //             activeLine.setProperties({
+    //                 linecolor: lineData.color,
+    //                 borderColor: lineData.color,
+    //             });
+    //         }
+    //     };
+
+    //     const updateTextPositionOnce = () => {
+    //         orderLineItems.forEach((item, i) => {
+    //             updateSingleLine(item, lines[i]);
+    //         });
+    //     };
+
+    //     const startZoomInterval = () => {
+    //         orderLineItems.forEach((item, i) => {
+    //             const interval = setInterval(() => {
+    //                 if (!isCancelled) {
+    //                     updateSingleLine(item, lines[i]);
+    //                 }
+    //             }, 10) as unknown as number;
+    //             intervals.push(interval);
+    //         });
+    //     };
+
+    //     if (
+    //         !chart ||
+    //         orderLineItems.length === 0 ||
+    //         lines.length === 0 ||
+    //         orderLineItems.length !== lines.length ||
+    //         !(localChartReady && isChartReady)
+    //     )
+    //         return;
+
+    //     if (zoomChanged) {
+    //         startZoomInterval();
+    //     } else {
+    //         updateTextPositionOnce();
+    //     }
+
+    //     // chart.activeChart().getPanes()[1].moveTo(0);
+
+    //     return () => {
+    //         isCancelled = true;
+    //         intervals.forEach(clearInterval);
+    //     };
+    // }, [
+    //     JSON.stringify(orderLineItems),
+    //     chart,
+    //     JSON.stringify(lines),
+    //     zoomChanged,
+    //     localChartReady,
+    //     isChartReady,
+    // ]);
 
     useEffect(() => {
         const handleMouseMove = (params: any) => {
@@ -642,4 +649,4 @@ const LineComponent = ({ lines, orderType }: LineProps) => {
     return null;
 };
 
-export default LineComponent;
+export default LineComponentCanvas;
