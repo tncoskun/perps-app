@@ -3,8 +3,8 @@ import { useTradingView } from '~/contexts/TradingviewContext';
 import { useTradeDataStore } from '~/stores/TradeDataStore';
 import type { LineData } from './component/LineComponent';
 import { buyColor, sellColor, type LineLabel } from './customOrderLineUtils';
-// import LineComponent from './component/LineComponent';
-import LineComponentCanvas from './component/LineComponentCanvas';
+import LineComponent from './component/LineComponent';
+import LineComponentCanvas from './component/OrderLabelComponent';
 
 const PositionOrderLine = () => {
     const { chart } = useTradingView();
@@ -67,7 +67,16 @@ const PositionOrderLine = () => {
 
     if (!chart) return null;
 
-    return <LineComponentCanvas key='pnl' orderType='position' lines={lines} />;
+    return (
+        <>
+            <LineComponent key='pnl' orderType='position' lines={lines} />
+            <LineComponentCanvas
+                key='pnl-text'
+                orderType='position'
+                lines={lines}
+            />
+        </>
+    );
 };
 
 export default PositionOrderLine;

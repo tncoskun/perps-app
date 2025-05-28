@@ -9,8 +9,8 @@ import {
     sellColor,
     type LineLabel,
 } from './customOrderLineUtils';
-// import LineComponent from './component/LineComponent';
-import LineComponentCanvas from './component/LineComponentCanvas';
+import LineComponent from './component/LineComponent';
+import LineComponentCanvas from './component/OrderLabelComponent';
 
 const OpenOrderLine = () => {
     const { chart } = useTradingView();
@@ -124,9 +124,7 @@ const OpenOrderLine = () => {
 
     if (!chart) return null;
 
-    return (
-        <LineComponentCanvas key='limit' orderType='openOrder' lines={lines} />
-    );
+    return <LineComponent key='limit' orderType='openOrder' lines={lines} />;
 };
 
 export default OpenOrderLine;
