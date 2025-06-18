@@ -16,7 +16,7 @@ export default function OrderLines({
     overlayCanvasRef,
     canvasSize,
 }: OrderLinesProps) {
-    const { chart } = useTradingView();
+    const { chart, isChartReady } = useTradingView();
 
     const openLines = useOpenOrderLines();
     const positionLines = usePositionOrderLines();
@@ -86,6 +86,15 @@ export default function OrderLines({
             }
         };
     }, [chart]);
+
+    useEffect(() => {
+        if (!isChartReady) {
+            const canvas = overlayCanvasRef.current?.getBoundingClientRect();
+            const ctx = overlayCanvasRef.current?.getContext('2d');
+
+            if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }, [isChartReady]);
 
     return (
         <>
