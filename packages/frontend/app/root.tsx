@@ -22,6 +22,7 @@ import LoadingIndicator from './components/LoadingIndicator/LoadingIndicator';
 import { useTradeDataStore } from './stores/TradeDataStore';
 import NoConnectionIndicator from './components/NoConnectionIndicator/NoConnectionIndicator';
 import { AppProvider } from './contexts/AppContext';
+import WsReconnectingIndicator from './components/WsReconnectingIndicator/WsReconnectingIndicator';
 
 // Added ComponentErrorBoundary to prevent entire app from crashing when a component fails
 class ComponentErrorBoundary extends React.Component<
@@ -110,7 +111,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
     // Use memoized value to prevent unnecessary re-renders
     const { wsEnvironment } = useDebugStore();
-    const { setInternetConnected, internetConnected } = useTradeDataStore();
+    const { setInternetConnected, internetConnected, wsReconnecting } =
+        useTradeDataStore();
 
     useEffect(() => {
         const onlineListener = () => {
@@ -134,8 +136,9 @@ export default function App() {
             <Layout>
                 <AppProvider>
                     <SdkProvider environment={wsEnvironment}>
-                      {!internetConnected && <NoConnectionIndicator />}
-                      <TutorialProvider>
+                        {!internetConnected && <NoConnectionIndicator />}
+                        {wsReconnecting && <WsReconnectingIndicator />}
+                        <TutorialProvider>
                             <div className='root-container'>
                                 {/* Added error boundary for header */}
                                 <ComponentErrorBoundary>

@@ -175,7 +175,10 @@
 
 /* later on this element will be a chart */
 .strategy_details_graph {
-    background-color: grey;
+    background-color: var(--bg-dark2);
+    border-radius: 16px;
+    justify-content: start;
+    align-items: start;
 }
 
 /* top-level JSX for content in the strategy removal modal */
