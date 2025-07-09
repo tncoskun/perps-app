@@ -7,5 +7,5 @@
     --themed-color-chart-page-bg: #0e0e14;
 }
 .chart-gui-wrapper canvas[data-name='pane-canvas'] {
-    background: #0e0e14 !important;
+    /* background: #0e0e14 !important; */
 }
