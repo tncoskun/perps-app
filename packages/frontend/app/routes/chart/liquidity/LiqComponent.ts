@@ -25,8 +25,50 @@ const LiqComponent = ({
     const { chart, isChartReady } = useTradingView();
 
     useEffect(() => {
-        console.log({ chart });
-    }, [chart]);
+        if (chart && isChartReady) {
+            const chartDiv = document.getElementById('tv_chart');
+            const iframe = chartDiv?.querySelector(
+                'iframe',
+            ) as HTMLIFrameElement;
+
+            const iframeDoc = iframe?.contentDocument;
+
+            if (iframeDoc && overlayCanvasRef?.current) {
+                const paneCanvas = iframeDoc.querySelector(
+                    'canvas[data-name="pane-canvas"]',
+                ) as HTMLCanvasElement;
+
+                const paneCanvasTop = iframeDoc.querySelector(
+                    'canvas[data-name="pane-top-canvas"]',
+                ) as HTMLCanvasElement;
+
+                if (paneCanvas && paneCanvasTop) {
+                    const width = overlayCanvasRef.current.style.width;
+                    const height = overlayCanvasRef.current.style.height;
+                    // paneCanvas.style.background = 'transparent !important';
+
+                    if (
+                        width !== canvasSize?.styleWidth ||
+                        height !== canvasSize?.styleWidth
+                    ) {
+                        overlayCanvasRef.current.style.width = `${canvasSize?.styleWidth}px`;
+                        overlayCanvasRef.current.style.height = `${canvasSize?.styleHeight}px`;
+                        overlayCanvasRef.current.width = paneCanvas.width;
+                        overlayCanvasRef.current.height = paneCanvas.height;
+                    }
+
+                    const overlayCtx =
+                        overlayCanvasRef.current.getContext('2d');
+                    // const paneCtx = paneCanvas.getContext('2d');
+                    // const paneCanvasTopCtx = paneCanvas.getContext('2d');
+                    if (overlayCtx /* &&  paneCtx && paneCanvasTopCtx */) {
+                        overlayCtx.fillStyle = 'red';
+                        overlayCtx.fillRect(0, 0, 100, 100);
+                    }
+                }
+            }
+        }
+    }, [chart, isChartReady]);
 
     // const ctx = overlayCanvasRef.current?.getContext('2d');
 

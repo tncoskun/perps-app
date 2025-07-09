@@ -43,18 +43,15 @@ const OverlayCanvasBackground: React.FC = () => {
             newCanvas.style.left = '0';
             newCanvas.style.cursor = 'pointer';
             newCanvas.style.pointerEvents = 'none';
-            newCanvas.style.zIndex = '0';
+            newCanvas.style.zIndex = '1';
             newCanvas.width = paneCanvas.width;
             newCanvas.height = paneCanvas?.height;
-            // newCanvas.style.background = 'transparent';
             newCanvas.style.border = '2px solid red';
+            newCanvas.style.mixBlendMode = 'color';
 
-            // newCanvas.background='pink';
             paneCanvas.parentNode.insertBefore(newCanvas, paneCanvas);
 
             canvasRef.current = newCanvas;
-
-            // paneCanvas.style.visibility = 'hidden';
         }
 
         const canvas = canvasRef.current;
