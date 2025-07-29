@@ -48,6 +48,7 @@ import {
     type TradingTerminalFeatureset,
 } from '~/tv/charting_library';
 import { processSymbolUrlParam } from '~/utils/AppUtils';
+import { debugWallets } from '~/utils/Constants';
 
 interface TradingViewContextType {
     chart: IChartingLibraryWidget | null;
@@ -463,14 +464,26 @@ export const TradingViewProvider: React.FC<{ children: React.ReactNode }> = ({
     }, [chart]);
 
     useEffect(() => {
+        // if liquidations are active, clear the marks
         if (liquidationsActive) {
             if (chart) {
                 chart.chart().clearMarks();
             }
-        } else if (debugWallet.address && chart) {
-            getMarkFillData(symbol, debugWallet.address).then(() => {
-                chart.chart().refreshMarks();
-            });
+        } else {
+            if (debugWallet.address && chart) {
+                if (
+                    // empty account is being selected once user logs out
+                    debugWallet.address.toLowerCase() ===
+                    debugWallets[2].address.toLowerCase()
+                ) {
+                    chart.chart().clearMarks();
+                } else {
+                    // if it's not the empty account, get the mark fill data
+                    getMarkFillData(symbol, debugWallet.address).then(() => {
+                        chart.chart().refreshMarks();
+                    });
+                }
+            }
         }
     }, [debugWallet, chart, symbol, liquidationsActive]);
 
