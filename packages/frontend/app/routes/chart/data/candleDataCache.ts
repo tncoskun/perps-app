@@ -204,3 +204,18 @@ export function getMarkColorData() {
 
     return bsColorSets['default'];
 }
+
+export function getFilteredCandle(
+    symbol: string,
+    resolution: string,
+    from: number,
+    to: number,
+) {
+    const key = `${symbol}-${resolution}`;
+    const cachedData = dataCache.get(key) || [];
+
+    const res = cachedData.filter((i) => {
+        return i.time >= from * 1000 && i.time <= to * 1000;
+    });
+    return res;
+}

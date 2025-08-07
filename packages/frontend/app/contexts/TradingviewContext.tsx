@@ -53,11 +53,13 @@ import { debugWallets } from '~/utils/Constants';
 interface TradingViewContextType {
     chart: IChartingLibraryWidget | null;
     isChartReady: boolean;
+    chartInterval: string | undefined;
 }
 
 export const TradingViewContext = createContext<TradingViewContextType>({
     chart: null,
     isChartReady: false,
+    chartInterval: undefined,
 });
 
 export interface ChartContainerProps {
@@ -494,7 +496,9 @@ export const TradingViewProvider: React.FC<{ children: React.ReactNode }> = ({
     }, [bsColor, chart, showBuysSellsOnChart]);
 
     return (
-        <TradingViewContext.Provider value={{ chart, isChartReady }}>
+        <TradingViewContext.Provider
+            value={{ chart, isChartReady, chartInterval }}
+        >
             {children}
         </TradingViewContext.Provider>
     );
