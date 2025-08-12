@@ -19,6 +19,7 @@ import {
 } from '../customOrderLineUtils';
 import { drawLabel, drawLiqLabel, type LabelType } from '../orderLineUtils';
 import type { LineData } from './LineComponent';
+import { useDebugStore } from '~/stores/DebugStore';
 
 interface LabelProps {
     lines: LineData[];
@@ -55,6 +56,7 @@ const LabelComponent = ({
     const { chart, isChartReady } = useTradingView();
 
     const notifications = useNotificationStore();
+    const { debugWallet } = useDebugStore();
 
     const { executeCancelOrder } = useCancelOrderService();
     const { executeLimitOrder } = useLimitOrderService();
@@ -489,65 +491,74 @@ const LabelComponent = ({
             const newPrice = tempSelectedLine.parentLine.yPrice;
             const quantity = tempSelectedLine.parentLine.quantityTextValue;
             const side = tempSelectedLine.parentLine.side;
+            const type = tempSelectedLine.parentLine.textValue.type;
+            if (debugWallet.label !== 'mockData') {
+                try {
+                    // If cancel was successful, create a new order with the updated price
+                    // Note: You'll need to provide the correct order parameters based on your application's needs
+                    const newOrderParams: LimitOrderParams = {
+                        // Example parameters - replace with actual parameters from your order
+                        price: roundDownToTenth(newPrice),
+                        // Add other required parameters for the limit order
+                        // For example:
+                        // symbol: 'BTC/USD',
+                        side,
+                        quantity: quantity,
+                        replaceOrderId: BigInt(orderId),
+                        // ... other required parameters
+                    } as LimitOrderParams; // Cast to the correct type
 
-            try {
-                // If cancel was successful, create a new order with the updated price
-                // Note: You'll need to provide the correct order parameters based on your application's needs
-                const newOrderParams: LimitOrderParams = {
-                    // Example parameters - replace with actual parameters from your order
-                    price: roundDownToTenth(newPrice),
-                    // Add other required parameters for the limit order
-                    // For example:
-                    // symbol: 'BTC/USD',
-                    side,
-                    quantity: quantity,
-                    replaceOrderId: BigInt(orderId),
-                    // ... other required parameters
-                } as LimitOrderParams; // Cast to the correct type
+                    const limitOrderResult =
+                        await executeLimitOrder(newOrderParams);
 
-                const limitOrderResult =
-                    await executeLimitOrder(newOrderParams);
-
-                if (!limitOrderResult.success) {
+                    if (!limitOrderResult.success) {
+                        setSelectedLine(undefined);
+                        console.error(
+                            'Failed to create new order:',
+                            limitOrderResult.error,
+                        );
+                        // Show error notification to user
+                        add({
+                            title: 'Failed to update order',
+                            message:
+                                limitOrderResult.error ||
+                                'Unknown error occurred',
+                            icon: 'error',
+                            removeAfter: 10000,
+                            txLink: limitOrderResult.signature
+                                ? `${blockExplorer}/tx/${limitOrderResult.signature}`
+                                : undefined,
+                        });
+                    } else {
+                        // Show success notification
+                        add({
+                            title: 'Order updated',
+                            message:
+                                'The order has been successfully updated with the new price.',
+                            icon: 'check',
+                            removeAfter: 10000,
+                            txLink: limitOrderResult.signature
+                                ? `${blockExplorer}/tx/${limitOrderResult.signature}`
+                                : undefined,
+                        });
+                    }
+                } catch (error) {
                     setSelectedLine(undefined);
-                    console.error(
-                        'Failed to create new order:',
-                        limitOrderResult.error,
-                    );
-                    // Show error notification to user
+                    console.error('Error updating order:', error);
                     add({
-                        title: 'Failed to update order',
+                        title: 'Error updating order',
                         message:
-                            limitOrderResult.error || 'Unknown error occurred',
+                            error instanceof Error
+                                ? error.message
+                                : 'Unknown error occurred',
                         icon: 'error',
-                        removeAfter: 10000,
-                        txLink: limitOrderResult.signature
-                            ? `${blockExplorer}/tx/${limitOrderResult.signature}`
-                            : undefined,
-                    });
-                } else {
-                    // Show success notification
-                    add({
-                        title: 'Order updated',
-                        message:
-                            'The order has been successfully updated with the new price.',
-                        icon: 'check',
-                        removeAfter: 10000,
-                        txLink: limitOrderResult.signature
-                            ? `${blockExplorer}/tx/${limitOrderResult.signature}`
-                            : undefined,
                     });
                 }
-            } catch (error) {
-                setSelectedLine(undefined);
-                console.error('Error updating order:', error);
-                add({
-                    title: 'Error updating order',
-                    message:
-                        error instanceof Error
-                            ? error.message
-                            : 'Unknown error occurred',
-                    icon: 'error',
+            } else {
+                console.log({
+                    orderId,
+                    type,
+                    newPrice,
                 });
             }
 
@@ -574,7 +585,13 @@ const LabelComponent = ({
         return () => {
             d3.select(canvas).on('.drag', null);
         };
-    }, [overlayCanvasRef.current, chart, selectedLine, drawnLabelsRef.current]);
+    }, [
+        overlayCanvasRef.current,
+        chart,
+        selectedLine,
+        drawnLabelsRef.current,
+        debugWallet,
+    ]);
 
     return null;
 };

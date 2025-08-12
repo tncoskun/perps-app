@@ -92,6 +92,10 @@ export const debugWallets: DebugWallet[] = [
         label: 'strobie',
         address: '0xECB63caA47c7c4E77F60f1cE858Cf28dC2B82b00',
     },
+    {
+        label: 'mockData',
+        address: '0x350736dff5e36bB79Fd3Ce2677d2e73A82b051a8',
+    },
 ];
 
 export const OrderHistoryLimits = {

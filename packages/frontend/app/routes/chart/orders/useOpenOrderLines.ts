@@ -8,6 +8,7 @@ import {
 } from './customOrderLineUtils';
 import type { LineData } from './component/LineComponent';
 import { useAppSettings } from '~/stores/AppSettingsStore';
+import type { OrderDataIF } from '~/utils/orderbook/OrderBookIFs';
 
 export const useOpenOrderLines = (): LineData[] => {
     const { bsColor, getBsColor } = useAppSettings();
@@ -30,13 +31,77 @@ export const useOpenOrderLines = (): LineData[] => {
         return data.length > 0 ? data[0].szi : undefined;
     }, [JSON.stringify(positions), symbol]);
 
+    const mockData: OrderDataIF[] = [
+        {
+            coin: 'ETH',
+            cloid: 'null',
+            oid: 131242508541,
+            side: 'sell',
+            sz: 0,
+            tif: 'null',
+            timestamp: 1754919740786,
+            status: 'open',
+            limitPx: 4842.6,
+            origSz: 0,
+            reduceOnly: true,
+            isPositionTpsl: true,
+            isTrigger: true,
+            triggerPx: 5263.7,
+            triggerCondition: 'Price above 5263.7',
+            orderType: 'Take Profit Market',
+            orderValue: 0,
+        },
+        {
+            coin: 'ETH',
+            cloid: 'null',
+            oid: 131275120794,
+            side: 'sell',
+            sz: 0.0025,
+            tif: 'null',
+            timestamp: 1754922351348,
+            status: 'open',
+            limitPx: 4600,
+            origSz: 0.0025,
+            reduceOnly: true,
+            isPositionTpsl: false,
+            isTrigger: true,
+            triggerPx: 5000,
+            triggerCondition: 'Price above 5000',
+            orderType: 'Take Profit Market',
+            orderValue: 11.5,
+        },
+        {
+            coin: 'ETH',
+            cloid: 'null',
+            oid: 131275120793,
+            side: 'sell',
+            sz: 0.0025,
+            tif: 'null',
+            timestamp: 1754922351348,
+            status: 'open',
+            limitPx: 1840,
+            origSz: 0.0025,
+            reduceOnly: true,
+            isPositionTpsl: false,
+            isTrigger: true,
+            triggerPx: 2000,
+            triggerCondition: 'Price below 2000',
+            orderType: 'Stop Market',
+            orderValue: 4.6000000000000005,
+        },
+    ];
     useEffect(() => {
-        if (!chart || !userSymbolOrders?.length) {
+        const ordersToUse =
+            debugWallet.label === 'mockData'
+                ? [...userSymbolOrders, ...mockData]
+                : userSymbolOrders;
+
+        if (!chart || !ordersToUse?.length) {
             setLines([]);
             return;
         }
 
-        const newLines: LineData[] = userSymbolOrders
+        const newLines: LineData[] = ordersToUse
             .sort((a, b) => a.timestamp - b.timestamp)
             .map((order): LineData => {
                 const {
