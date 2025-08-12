@@ -37,7 +37,7 @@ export const useOpenOrderLines = (): LineData[] => {
             cloid: 'null',
             oid: 131242508541,
             side: 'sell',
-            sz: 0,
+            sz: 0.0012,
             tif: 'null',
             timestamp: 1754919740786,
             status: 'open',
