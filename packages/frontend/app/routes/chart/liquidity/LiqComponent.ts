@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { useTradingView } from '~/contexts/TradingviewContext';
-import { getFilteredCandle } from '../data/candleDataCache';
+import { getCandleData, getFilteredCandle } from '../data/candleDataCache';
 import { useTradeDataStore } from '~/stores/TradeDataStore';
 /* import type {
     IChartingLibraryWidget,
     IChartWidgetApi,
 } from '~/tv/charting_library'; */
+import * as d3 from 'd3';
+import { resolutionToSeconds } from '../data/utils/utils';
 
 interface LabelProps {
     overlayCanvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
@@ -28,6 +30,11 @@ const LiqComponent = ({
 
     const { symbol } = useTradeDataStore();
 
+    function findIndexByTime(candles: any, time: number) {
+        let i = candles.findIndex((c: any) => c.time >= time * 1000);
+        return i === -1 ? candles.length - 1 : i;
+    }
+
     useEffect(() => {
         let animationFrameId: number;
 
@@ -39,7 +46,6 @@ const LiqComponent = ({
                 chartInterval
             ) {
                 const { from, to } = chart.activeChart().getVisibleRange();
-                scaleData?.xScale.domain([from * 1000, to * 1000]);
 
                 const overlayCtx = overlayCanvasRef.current.getContext('2d');
                 if (overlayCtx) {
@@ -91,13 +97,105 @@ const LiqComponent = ({
                 }
 
                 const res = getFilteredCandle(symbol, chartInterval, from, to);
+
                 const timeScale = chart.activeChart().getTimeScale();
+                const domainX = (timeScale as any)._timeScale._visibleBars
+                    ._logicalRange;
+                // console.log(
+                //     { domainX },
+                //     (timeScale as any)._timeScale._visibleBars,
+                // );
+
+                // console.log(
+                //     'domainX._left, domainX._right',
+                //     domainX._left,
+                //     domainX._right,
+                // );
+
+                // console.log({ to }, new Date(to * 1000));
+
+                const rightData = res.at(-1);
+                const leftData = res[0];
+
+                const chartWidth = timeScale.width();
+
+                const offset = timeScale.rightOffset();
+                const offsetDecimalPart = offset - Math.trunc(offset);
+                const span = chartWidth / timeScale.barSpacing() - 1;
+
+                // console.log({span});
+
+                // const tempFrom =
+                //     from +
+                //     offsetDecimalPart * resolutionToSeconds(chartInterval);
+                const tempTo =
+                    rightData.time / 1000 +
+                    offset * resolutionToSeconds(chartInterval);
+                // to - offsetDecimalPart * resolutionToSeconds(chartInterval);
+
+                const tempFrom =
+                    tempTo - span * resolutionToSeconds(chartInterval);
+
+                console.log(
+                    'tooooo',
+                    new Date(to * 1000),
+                    new Date(tempTo * 1000),
+                );
+
+                // console.log(
+                //     'fooooomm',
+                //     new Date(from * 1000),
+                //     new Date(tempFrom * 1000),
+                // );
+
+                // const diffTimeCountLeft =
+                //     (leftData.time - tempFrom * 1000) /
+                //     (resolutionToSeconds(chartInterval) * 1000);
+
+                // const diffTimeCountRight =
+                //     (tempTo * 1000 - rightData.time) /
+                //     (resolutionToSeconds(chartInterval) * 1000);
+
+                // const diffTimeCountLeft =
+                //     (leftData.time - tempFrom * 1000) /
+                //         (resolutionToSeconds(chartInterval) * 1000) -
+                //     offsetDecimalPart;
+
+                // const diffTimeCountRight =
+                //     (tempTo * 1000 - rightData.time) /
+                //     (resolutionToSeconds(chartInterval) * 1000);
+
                 const dpr = window.devicePixelRatio || 1;
 
-                const candleWidth = timeScale.barSpacing() / dpr;
+                const candleWidth = timeScale.barSpacing() * 0.8;
 
-                console.log({ candleWidth, timeScale });
+                // const candleData = getCandleData(symbol, chartInterval);
+                const padding = 0.5;
 
+                // scaleData?.xScale.domain([
+                //     leftData.index - diffTimeCountLeft - padding,
+                //     res.at(-1).index + diffTimeCountRight + padding,
+                // ]);
+
+                // console.log(
+                //     'rightttt',
+                //     offset,
+                //     scaleData?.xScale.domain()[1],
+                //     domainX._right,
+                //     scaleData?.xScale.domain()[1] === domainX._right,
+                // );
+
+                scaleData.xScale.domain([
+                    domainX._left - padding,
+                    domainX._right + padding,
+                ]);
+
+                // console.log(
+                //     'domainX._left, domainX._right scaleData?.xScale.domain',
+                //     { offsetDecimalPart },
+                //     scaleData?.xScale.domain(),
+                //     domainX,
+                // );
                 res.forEach((element) => {
                     const high = scaleData.yScale(element.close) / dpr;
                     const low = scaleData.yScale(element.open) / dpr;
@@ -110,7 +208,17 @@ const LiqComponent = ({
 
                     const min = Math.min(low, high);
 
-                    const x = scaleData.xScale(element.time) / dpr;
+                    const logicalIndex = (
+                        timeScale as any
+                    )._timeScale._points._items.findIndex((p: any) => {
+                        return p * 1000 === element.time;
+                    });
+
+                    // const index = candleData.findIndex(
+                    //     (i) => i.time === element.time,
+                    // );
+
+                    const x = scaleData.xScale(logicalIndex) / dpr;
 
                     eraseCanvasRegion(
                         min,

@@ -52,9 +52,12 @@ export async function getHistoricalData(
                     );
 
                     if (index > -1) {
-                        cachedData[index] = newBar;
+                        cachedData[index] = { ...newBar, index };
                     } else {
-                        cachedData.push(newBar);
+                        cachedData.push({
+                            ...newBar,
+                            index: cachedData.length,
+                        });
                     }
                 }
 
@@ -82,9 +85,16 @@ export function updateCandleCache(
     const lastIndex = cachedData.findIndex((b) => b.time === tickTime);
 
     if (lastIndex > -1) {
-        cachedData[lastIndex] = { ...cachedData[lastIndex], ...tick };
+        cachedData[lastIndex] = {
+            ...cachedData[lastIndex],
+            ...tick,
+            index: cachedData[lastIndex].index,
+        };
     } else {
-        cachedData.push(tick);
+        cachedData.push({
+            ...tick,
+            index: cachedData.length,
+        });
     }
 
     dataCache.set(key, cachedData);
@@ -218,4 +228,12 @@ export function getFilteredCandle(
         return i.time >= from * 1000 && i.time <= to * 1000;
     });
     return res;
+}
+
+export function getCandleData(symbol: string, resolution: string) {
+    const key = `${symbol}-${resolution}`;
+
+    const cachedData = dataCache.get(key) || [];
+
+    return cachedData;
 }

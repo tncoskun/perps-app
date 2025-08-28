@@ -32,6 +32,11 @@ const LiqComponent = ({
             if (chart && scaleData && overlayCanvasRef.current) {
                 const { from, to } = chart.activeChart().getVisibleRange();
                 scaleData?.xScale.domain([from * 1000, to * 1000]);
+                console.log(
+                    'scaleData?.xScale.domain',
+                    scaleData?.xScale.range(),
+                );
+
                 const overlayCtx = overlayCanvasRef.current.getContext('2d');
                 if (overlayCtx) {
                     if (overlayCanvasRef.current) {

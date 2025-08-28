@@ -66,9 +66,9 @@ export default function OrderLines({
 
         const loop = () => {
             const priceRange = priceScale.getVisiblePriceRange();
-            const { from, to } = chart.activeChart().getVisibleRange();
+            // const { from, to } = chart.activeChart().getVisibleRange();
 
-            scaleData?.xScale.domain([from * 1000, to * 1000]);
+            // scaleData?.xScale.domain([from * 1000, to * 1000]);
             if (priceRange) {
                 const currentRange = {
                     min: priceRange.from,

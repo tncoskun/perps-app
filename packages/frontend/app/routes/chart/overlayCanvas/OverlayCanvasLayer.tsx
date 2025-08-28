@@ -37,7 +37,7 @@ const OverlayCanvasLayer: React.FC<OverlayCanvasLayerProps> = ({
 
         if (isFirstInit) {
             const yScale = d3.scaleLinear();
-            const xScale = d3.scaleTime();
+            const xScale = d3.scaleLinear();
             const scaleSymlog = d3.scaleSymlog();
             scaleDataRef.current = { yScale, xScale, scaleSymlog };
         }
