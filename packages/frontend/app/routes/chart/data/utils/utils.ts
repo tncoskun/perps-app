@@ -163,19 +163,11 @@ export function checkDefaultColors(): boolean {
 
 export const supportedResolutions = [
     '1',
-    '3',
     '5',
-    '15',
-    '30',
     '60',
-    '120',
     '240',
-    '480',
-    '720',
     '1D',
-    '3D',
     '1W',
-    '1M',
 ] as ResolutionString[];
 
 function rgbaFromHex(value: string) {

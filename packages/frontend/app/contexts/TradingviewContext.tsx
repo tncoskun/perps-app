@@ -463,6 +463,10 @@ export const TradingViewProvider: React.FC<{ children: React.ReactNode }> = ({
     }, [lastSleepMs, lastAwakeMs, chartInterval, initChart, chart, symbol]);
 
     useEffect(() => {
+        console.log('Resolution changed : ', chartInterval);
+    }, [chartInterval]);
+
+    useEffect(() => {
         if (chart) {
             setIsChartReady(false);
             const chartRef = chart.chart();
