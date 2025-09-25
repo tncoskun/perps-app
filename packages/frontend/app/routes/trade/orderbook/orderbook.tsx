@@ -32,6 +32,8 @@ import OrderRow, { OrderRowClickTypes } from './orderrow/orderrow';
 // import { TIMEOUT_OB_POLLING } from '~/utils/Constants';
 import type { TabType } from '~/routes/trade';
 import { useSdk } from '~/hooks/useSdk';
+import type { L2BookData } from '@perps-app/sdk/src/utils/types';
+import { processOrderBookMessage } from '~/processors/processOrderBook';
 
 interface OrderBookProps {
     orderCount: number;
@@ -65,9 +67,12 @@ const OrderBook: React.FC<OrderBookProps> = ({
 
     const orderClickDisabled = false;
 
-    const orderRowHeight = useMemo(() => {
+    const [orderRowHeight, setOrderRowHeight] = useState<number>(16);
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
         const dummyOrderRow = document.getElementById('dummyOrderRow');
-        return dummyOrderRow?.getBoundingClientRect()?.height || 16;
+        const h = dummyOrderRow?.getBoundingClientRect()?.height;
+        if (h && Number.isFinite(h)) setOrderRowHeight(h);
     }, []);
 
     const [resolutions, setResolutions] = useState<OrderRowResolutionIF[]>([]);
@@ -87,7 +92,15 @@ const OrderBook: React.FC<OrderBookProps> = ({
         setSelectedMode,
         setOrderBookState,
     } = useOrderBookStore();
-    const rowLockTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const [lwBuys, setLwBuys] = useState<OrderBookRowIF[]>([]);
+    const [lwSells, setLwSells] = useState<OrderBookRowIF[]>([]);
+
+    const rowLockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+        null,
+    );
+
+    const { subscribeToPoller, unsubscribeFromPoller } = useRestPoller();
 
     // No useMemo for simple arithmetic
     const buyPlaceHolderCount = Math.max(orderCount - buys?.length || 0, 0);
@@ -108,6 +121,49 @@ const OrderBook: React.FC<OrderBookProps> = ({
         symbol,
     } = useTradeDataStore();
     const userOrdersRef = useRef<OrderDataIF[]>([]);
+
+    const needExtraPolling = useMemo(() => {
+        if (!selectedResolution) return false;
+        if (selectedResolution.mantissa) return true;
+        if (
+            symbol === 'BTC' &&
+            selectedResolution.nsigfigs &&
+            selectedResolution.nsigfigs <= 5
+        )
+            return true;
+        if (
+            symbol !== 'BTC' &&
+            selectedResolution.nsigfigs &&
+            selectedResolution.nsigfigs <= 4
+        )
+            return true;
+        return false;
+    }, [selectedResolution, symbol]);
+
+    useEffect(() => {
+        const subKey = {
+            type: 'l2Book' as const,
+            coin: symbol,
+        };
+
+        if (needExtraPolling) {
+            subscribeToPoller(
+                'info',
+                subKey,
+                (l2BookData: L2BookData) => {
+                    const { buys, sells } = processOrderBookMessage(l2BookData);
+                    setLwBuys(buys);
+                    setLwSells(sells);
+                },
+                3000,
+                true,
+            );
+        }
+
+        return () => {
+            unsubscribeFromPoller('info', subKey);
+        };
+    }, [needExtraPolling]);
 
     // Use custom hook for stable slot arrays
     const buySlots = useOrderSlots(buys);
@@ -258,22 +314,45 @@ const OrderBook: React.FC<OrderBookProps> = ({
     }, [subKey, info]);
 
     const midHeader = useCallback(
-        (id: string) => (
-            <div id={id} className={styles.orderBookBlockMid}>
-                <div>Spread</div>
-                <div>{selectedResolution?.val}</div>
-                <div>
-                    {symbolInfo?.markPx &&
-                        selectedResolution?.val &&
-                        (
-                            (selectedResolution?.val / symbolInfo?.markPx) *
-                            100
-                        ).toFixed(3)}
-                    %
+        (id: string) => {
+            const buyArr =
+                needExtraPolling && lwBuys.length > 0 ? lwBuys : buys;
+            const sellArr =
+                needExtraPolling && lwSells.length > 0 ? lwSells : sells;
+            let diff = 0;
+            if (
+                buyArr.length > 0 &&
+                sellArr.length > 0 &&
+                orderBookState === TableState.FILLED
+            ) {
+                diff = sellArr[0].px - buyArr[0].px;
+            }
+            return (
+                <div id={id} className={styles.orderBookBlockMid}>
+                    <div>Spread</div>
+                    <div>
+                        {diff > 0 ? new Number(diff.toFixed(6)).toString() : ''}
+                    </div>
+                    <div>
+                        {symbolInfo?.markPx &&
+                            diff > 0 &&
+                            new Number(
+                                ((diff / symbolInfo?.markPx) * 100).toFixed(3),
+                            ).toString()}
+                        %
+                    </div>
                 </div>
-            </div>
-        ),
-        [selectedResolution, symbolInfo],
+            );
+        },
+        [
+            buys,
+            sells,
+            symbolInfo,
+            orderBookState,
+            lwBuys,
+            lwSells,
+            needExtraPolling,
+        ],
     );
 
     const rowClickHandler = useCallback(
@@ -332,20 +411,28 @@ const OrderBook: React.FC<OrderBookProps> = ({
         ],
     );
 
+    // Deterministic pseudo-random generator based on index to avoid SSR hydration mismatches
+    const seededRandom = useCallback((n: number) => {
+        // Mulberry-like simple PRNG using only the index for determinism across server and client
+        let t = (n + 0x6d2b79f5) | 0;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296; // in [0,1)
+    }, []);
+
     const getRandWidth = useCallback(
         (index: number, inverse: boolean = false) => {
+            const jitter = seededRandom(index) * 20; // 0..20
             let rand;
             if (inverse) {
-                rand =
-                    100 / orderCount +
-                    index * (100 / orderCount) +
-                    Math.random() * 20;
+                rand = 100 / orderCount + index * (100 / orderCount) + jitter;
             } else {
-                rand = 100 - index * (100 / orderCount) + Math.random() * 20;
+                rand = 100 - index * (100 / orderCount) + jitter;
             }
-            return rand < 100 ? rand + '%' : '100%';
+            const clamped = Math.min(rand, 100);
+            return clamped + '%';
         },
-        [orderCount],
+        [orderCount, seededRandom],
     );
 
     return (

@@ -14,7 +14,7 @@ import { LuChevronDown, LuChevronUp, LuSettings } from 'react-icons/lu';
 import { MdOutlineClose, MdOutlineMoreHoriz } from 'react-icons/md';
 import { Link, useLocation, useSearchParams } from 'react-router';
 import { useKeydown } from '~/hooks/useKeydown';
-import { useShortScreen } from '~/hooks/useMediaQuery';
+import useMediaQuery, { useShortScreen } from '~/hooks/useMediaQuery';
 import { useModal } from '~/hooks/useModal';
 import useOutsideClick from '~/hooks/useOutsideClick';
 import { useUnifiedMarginData } from '~/hooks/useUnifiedMarginData';
@@ -37,35 +37,9 @@ import FeedbackModal from '../FeedbackModal/FeedbackModal';
 export default function PageHeader() {
     // Feedback modal state
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-    const [feedbackType, setFeedbackType] = useState<
-        'positive' | 'negative' | null
-    >(null);
-    const [feedbackText, setFeedbackText] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSubmitted, setIsSubmitted] = useState(false);
-
-    const handleFeedbackSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!feedbackType || !feedbackText.trim()) return;
-
-        setIsSubmitting(true);
-        try {
-            // TODO: Replace with actual feedback submission
-            console.log('Submitting feedback:', { feedbackType, feedbackText });
-            await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-            setIsSubmitted(true);
-        } catch (error) {
-            console.error('Error submitting feedback:', error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
 
     const handleFeedbackClose = () => {
         setIsFeedbackOpen(false);
-        setFeedbackType(null);
-        setFeedbackText('');
-        setIsSubmitted(false);
     };
     // logic to read a URL referral code and set in state + local storage
     const [searchParams] = useSearchParams();
@@ -184,7 +158,9 @@ export default function PageHeader() {
         [],
     );
 
-    const isShortScreen: boolean = useShortScreen();
+    const shortA = useShortScreen();
+    const shortB = useMediaQuery('(max-width: 600px)');
+    const isShortScreen: boolean = shortA || shortB;
 
     const { openDepositModal, openWithdrawModal, PortfolioModalsRenderer } =
         usePortfolioModals();
@@ -248,6 +224,7 @@ export default function PageHeader() {
                     <button
                         onClick={() => setIsMenuOpen(false)}
                         className={styles.mobileNavCloseButton}
+                        aria-label='Close navigation menu'
                     >
                         <MdOutlineClose size={20} color='var(--text1)' />
                     </button>
@@ -305,40 +282,42 @@ export default function PageHeader() {
                     </Tooltip>
                 </nav>
                 <div className={styles.rightSide}>
-                    {isUserConnected && (
-                        <section
-                            style={{
-                                position: 'relative',
-                            }}
-                            ref={depositMenuRef}
-                        >
-                            <button
-                                className={styles.depositButton}
-                                onClick={() => {
-                                    if (isShortScreen) {
-                                        setIsDepositDropdownOpen(
-                                            !isDepositDropdownOpen,
-                                        );
-                                    } else {
-                                        openDepositModal();
-                                    }
-                                }}
+                    <span className={styles.depositSlot}>
+                        {isUserConnected ? (
+                            <section
+                                style={{ position: 'relative' }}
+                                ref={depositMenuRef}
                             >
-                                {isShortScreen ? 'Transfer' : 'Deposit'}
-                            </button>
-                            {isDepositDropdownOpen && (
-                                <DepositDropdown
-                                    isDropdown
-                                    marginBucket={marginBucket}
-                                    openDepositModal={openDepositModal}
-                                    openWithdrawModal={openWithdrawModal}
-                                    PortfolioModalsRenderer={
-                                        PortfolioModalsRenderer
-                                    }
-                                />
-                            )}
-                        </section>
-                    )}
+                                <button
+                                    className={styles.depositButton}
+                                    onClick={() => {
+                                        if (isShortScreen) {
+                                            setIsDepositDropdownOpen(
+                                                !isDepositDropdownOpen,
+                                            );
+                                        } else {
+                                            openDepositModal();
+                                        }
+                                    }}
+                                >
+                                    {isShortScreen ? 'Transfer' : 'Deposit'}
+                                </button>
+                                {isDepositDropdownOpen && (
+                                    <DepositDropdown
+                                        isDropdown
+                                        marginBucket={marginBucket}
+                                        openDepositModal={openDepositModal}
+                                        openWithdrawModal={openWithdrawModal}
+                                    />
+                                )}
+                            </section>
+                        ) : (
+                            <div
+                                className={styles.depositButtonPlaceholder}
+                                aria-hidden
+                            />
+                        )}
+                    </span>
 
                     {isUserConnected && showRPCButton && (
                         <section
@@ -436,6 +415,7 @@ export default function PageHeader() {
                     <button
                         className={styles.internationalButton}
                         onClick={() => appSettingsModal.open()}
+                        aria-label='Open settings'
                     >
                         <LuSettings size={20} />
                     </button>
@@ -448,6 +428,7 @@ export default function PageHeader() {
                             onClick={() =>
                                 setIsDropdownMenuOpen(!isDropdownMenuOpen)
                             }
+                            aria-label='Open more options menu'
                         >
                             <MdOutlineMoreHoriz size={20} />
                         </button>

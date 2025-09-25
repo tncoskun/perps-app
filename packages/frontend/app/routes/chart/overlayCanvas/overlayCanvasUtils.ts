@@ -23,7 +23,6 @@ export function findLimitLabelAtPosition(
     x: number,
     y: number,
     drawnLabels: LineData[],
-    isLiqPriceLineDraggable: boolean,
 ): {
     label: LabelLocation;
     parentLine: LineData;
@@ -33,11 +32,6 @@ export function findLimitLabelAtPosition(
     let yMathcParentLine = undefined;
 
     for (let i = drawnLabels.length - 1; i >= 0; i--) {
-        if (
-            drawnLabels[i].type === 'PNL' ||
-            (!isLiqPriceLineDraggable && drawnLabels[i].type === 'LIQ')
-        )
-            continue;
         const labelLocs = drawnLabels[i].labelLocations;
         if (!labelLocs) continue;
 

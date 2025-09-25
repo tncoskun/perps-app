@@ -47,7 +47,9 @@ export default function Trade() {
     symbolRef.current = symbol;
     // add refs near the other refs
     const lastColHeightRef = useRef<number | null>(null);
-    const lastWinInnerHeightRef = useRef<number>(window.innerHeight);
+    const lastWinInnerHeightRef = useRef<number>(
+        typeof window !== 'undefined' ? window.innerHeight : 0,
+    );
 
     const {
         orderBookMode,
@@ -332,7 +334,7 @@ export default function Trade() {
 
     const MobileTabNavigation = useMemo(
         () => (
-            <div className={styles.mobileTabNav}>
+            <div className={styles.mobileTabNav} id='mobileTradeTabs'>
                 <div className={styles.mobileTabBtns}>
                     {tabList.map(({ key, label }) => (
                         <button
@@ -457,7 +459,7 @@ export default function Trade() {
             <TradeRouteHandler />
             <WebDataConsumer />
             {symbol && (
-                <div className={styles.containerNew}>
+                <div className={styles.containerNew} id='tradePageRoot'>
                     {/* LEFT COLUMN */}
                     <div
                         className={styles.leftCol}
@@ -596,12 +598,10 @@ export default function Trade() {
                                 marginBucket={marginBucket}
                                 openDepositModal={openDepositModal}
                                 openWithdrawModal={openWithdrawModal}
-                                PortfolioModalsRenderer={
-                                    PortfolioModalsRenderer
-                                }
                             />
                         </section>
                     </div>
+                    {PortfolioModalsRenderer}
                 </div>
             )}
             <AdvancedTutorialController

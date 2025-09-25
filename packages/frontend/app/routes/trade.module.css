@@ -13,6 +13,7 @@ body {
     display: grid;
     grid-template-rows: 1fr var(--trade-tables-height-desktop);
     gap: var(--gap-s);
+    width: 600px;
 }
 
 .containerNew {
@@ -396,4 +397,13 @@ body {
     flex: 0 0 auto;
     height: 100%;
     max-height: 195px;
+}
+
+.table {
+    overflow: auto;
+    scrollbar-width: none; /* Firefox */
+}
+
+.table::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
 }

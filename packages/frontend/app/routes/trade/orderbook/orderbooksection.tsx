@@ -167,7 +167,7 @@ export default function OrderBookSection(props: propsIF) {
 
     // Resize effect
     useEffect(() => {
-        let timeoutId: NodeJS.Timeout | null = null;
+        let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
         const handleResize = () => {
             if (timeoutId) clearTimeout(timeoutId);
